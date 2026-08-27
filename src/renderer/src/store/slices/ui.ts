@@ -47,6 +47,11 @@ import {
   normalizeStatusBarUsageMode,
   type StatusBarUsageMode
 } from '../../../../shared/status-bar-usage-mode'
+import {
+  DEFAULT_STATUS_BAR_USAGE_FORMAT,
+  normalizeStatusBarUsageFormat,
+  type StatusBarUsageFormat
+} from '../../../../shared/status-bar-usage-format'
 import type { GitLabWorkItem } from '../../../../shared/gitlab-types'
 import type { LaunchSource } from '../../../../shared/telemetry-events'
 import type { TaskSourceContext } from '../../../../shared/task-source-context'
@@ -951,6 +956,8 @@ export type UISlice = {
   setUsagePercentageDisplay: (display: UsagePercentageDisplay) => void
   statusBarUsageMode: StatusBarUsageMode
   setStatusBarUsageMode: (mode: StatusBarUsageMode) => void
+  statusBarUsageFormat: StatusBarUsageFormat
+  setStatusBarUsageFormat: (format: StatusBarUsageFormat) => void
   workspacePortScan: { key: string; result: WorkspacePortScanResult } | null
   workspacePortScansByKey: Record<string, WorkspacePortScanResult>
   workspacePortScanRefreshing: boolean
@@ -2295,6 +2302,12 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
     window.api.ui.set({ statusBarUsageMode: normalized }).catch(console.error)
     set({ statusBarUsageMode: normalized })
   },
+  statusBarUsageFormat: { ...DEFAULT_STATUS_BAR_USAGE_FORMAT },
+  setStatusBarUsageFormat: (format) => {
+    const normalized = normalizeStatusBarUsageFormat(format)
+    window.api.ui.set({ statusBarUsageFormat: normalized }).catch(console.error)
+    set({ statusBarUsageFormat: normalized })
+  },
   workspacePortScan: null,
   workspacePortScansByKey: {},
   workspacePortScanRefreshing: false,
@@ -2579,6 +2592,7 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
         statusBarVisible: ui.statusBarVisible ?? true,
         usagePercentageDisplay: normalizeUsagePercentageDisplay(ui.usagePercentageDisplay),
         statusBarUsageMode: normalizeStatusBarUsageMode(ui.statusBarUsageMode),
+        statusBarUsageFormat: normalizeStatusBarUsageFormat(ui.statusBarUsageFormat),
         // Why: default true so existing users see the pet on first enabling the flag; only an explicit Hide persists false.
         petVisible: ui.petVisible ?? ui.sidekickVisible ?? true,
         petSize: clampPetSize(ui.petSize ?? ui.sidekickSize ?? PET_SIZE_DEFAULT),

@@ -65,6 +65,8 @@ import { UsageRosterPanel, getTightestUsageSection } from './UsageRosterPanel'
 import { getUsageProviderAccountsSectionId } from './usage-provider-settings-target'
 import { formatRateLimitWindowChipLabel } from '@/lib/window-label-formatter'
 import { useResetCountdownClock } from '@/hooks/useResetCountdownClock'
+import { resolveStatusBarUsageTemplate } from '../../../../shared/status-bar-usage-format'
+import { buildUsageFormatValues, renderUsageFormatTemplate } from './usage-format-template'
 import {
   markLiveCodexSessionsForRestart,
   resolveCodexRestartPromptAccountLabel
@@ -1179,6 +1181,22 @@ function VerboseProviderUsage({
   p: ProviderRateLimits
   display: UsagePercentageDisplay
 }): React.JSX.Element {
+  const usageFormat = useAppStore((s) => s.statusBarUsageFormat)
+  const template = resolveStatusBarUsageTemplate(usageFormat, p.provider)
+  // Why: the template can show reset countdowns, so tick with them like the account switcher does.
+  const now = useResetCountdownClock([
+    p.session?.resetsAt,
+    p.weekly?.resetsAt,
+    p.fableWeekly?.resetsAt,
+    p.monthly?.resetsAt
+  ])
+  if (template !== null) {
+    return (
+      <span className="whitespace-pre tabular-nums">
+        {renderUsageFormatTemplate(template, buildUsageFormatValues(p, { display, now }))}
+      </span>
+    )
+  }
   if (p.buckets && p.buckets.length > 0) {
     const visibleBuckets = p.buckets.filter((bucket) => STATUS_BAR_BUCKET_NAMES.has(bucket.name))
     return (

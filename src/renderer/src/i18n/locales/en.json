@@ -8924,6 +8924,10 @@
             "workspaceChromeAppearance": {
               "title": "App Chrome Appearance",
               "description": "Make the tab bar, status bar, side panels, and full-page views match your terminal theme, or keep the app theme."
+            },
+            "statusBarUsageFormat": {
+              "title": "Usage format",
+              "description": "Customize how each provider’s usage is written in the status bar with placeholders."
             }
           }
         },
@@ -11483,6 +11487,11 @@
         },
         "NativeChatSupportedAgents": {
           "label": "Supported agents:"
+        },
+        "StatusBarUsageFormatSetting": {
+          "reset": "Reset",
+          "previewLabel": "Preview",
+          "previewBuiltin": "Leave empty to use Orca’s built-in format."
         }
       },
       "right": {

@@ -7,6 +7,7 @@ import { translateSearchKeyword } from './settings-search-keywords'
 import { SHOW_UI_LANGUAGE_SETTING } from '@/i18n/supported-languages'
 import { getStatusBarToggles } from './appearance-status-bar-search'
 import { getUsagePercentageDisplayEntry } from './appearance-usage-percentage-search'
+import { getStatusBarUsageFormatEntry } from './appearance-status-bar-usage-format-search'
 import { getMenuBarIconEntries, getSystemTrayEntries } from './appearance-system-presence-search'
 
 export {
@@ -164,6 +165,7 @@ export const getTitlebarEntries = createLocalizedCatalog((): SettingsSearchEntry
 
 export const getStatusBarEntries = createLocalizedCatalog((): SettingsSearchEntry[] => [
   getUsagePercentageDisplayEntry(),
+  getStatusBarUsageFormatEntry(),
   ...getStatusBarToggles().map(({ title, description, keywords }) => ({
     title,
     description,

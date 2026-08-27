@@ -20,6 +20,8 @@ import {
   getUsagePercentageDisplayEntry
 } from './appearance-search'
 import { USAGE_PERCENTAGE_DISPLAY_SETTING_ID } from './appearance-usage-percentage-search'
+import { getStatusBarUsageFormatEntry } from './appearance-status-bar-usage-format-search'
+import { StatusBarUsageFormatSetting } from './StatusBarUsageFormatSetting'
 import { LeftSidebarAppearanceSetting } from './LeftSidebarAppearanceSetting'
 import { WorkspaceChromeAppearanceSetting } from './WorkspaceChromeAppearanceSetting'
 import {
@@ -76,6 +78,9 @@ export function AppearanceWindowSidebarSection({
   const setWorktreeCardMode = useAppStore((state) => state.setWorktreeCardMode)
   const visibleStatusBarToggles = useAvailableStatusBarToggles(getStatusBarToggles())
   const usagePercentageDisplayEntry = getUsagePercentageDisplayEntry()
+  const statusBarUsageFormatEntry = getStatusBarUsageFormatEntry()
+  const statusBarUsageFormat = useAppStore((state) => state.statusBarUsageFormat)
+  const setStatusBarUsageFormat = useAppStore((state) => state.setStatusBarUsageFormat)
   const leftSidebarAppearanceEntry = getLeftSidebarAppearanceEntry()
   const workspaceChromeAppearanceEntry = getWorkspaceChromeAppearanceEntry()
   const sidebarEntries = getSidebarEntries()
@@ -176,6 +181,18 @@ export function AppearanceWindowSidebarSection({
                       ]}
                     />
                   }
+                />
+              </SearchableSetting>
+
+              <SearchableSetting
+                title={statusBarUsageFormatEntry.title}
+                description={statusBarUsageFormatEntry.description}
+                keywords={statusBarUsageFormatEntry.keywords}
+                className="space-y-2"
+              >
+                <StatusBarUsageFormatSetting
+                  format={statusBarUsageFormat}
+                  onChange={setStatusBarUsageFormat}
                 />
               </SearchableSetting>
 

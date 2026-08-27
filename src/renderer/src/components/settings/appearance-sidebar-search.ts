@@ -35,6 +35,46 @@ export const getLeftSidebarAppearanceEntry = createLocalizedCatalog(
   })
 )
 
+export const getWorkspaceChromeAppearanceEntry = createLocalizedCatalog(
+  (): SettingsSearchEntry => ({
+    title: translate(
+      'auto.components.settings.appearance.search.workspaceChromeAppearance.title',
+      'App Chrome Appearance'
+    ),
+    description: translate(
+      'auto.components.settings.appearance.search.workspaceChromeAppearance.description',
+      'Make the tab bar, status bar, side panels, and full-page views match your terminal theme, or keep the app theme.'
+    ),
+    keywords: [
+      ...translateSearchKeyword(
+        'auto.components.settings.appearance.search.workspaceChromeAppearance.tabBar',
+        'tab bar'
+      ),
+      ...translateSearchKeyword(
+        'auto.components.settings.appearance.search.workspaceChromeAppearance.statusBar',
+        'status bar'
+      ),
+      ...translateSearchKeyword(
+        'auto.components.settings.appearance.search.leftSidebarAppearance.terminal',
+        'terminal'
+      ),
+      ...translateSearchKeyword(
+        'auto.components.settings.appearance.search.workspaceChromeAppearance.theme',
+        'theme'
+      ),
+      ...translateSearchKeyword(
+        'auto.components.settings.appearance.search.workspaceChromeAppearance.chrome',
+        'chrome'
+      ),
+      ...translateSearchKeyword('auto.components.settings.appearance.search.5bff6a2ef0', 'sidebar'),
+      ...translateSearchKeyword(
+        'auto.components.settings.appearance.search.leftSidebarAppearance.background',
+        'background'
+      )
+    ]
+  })
+)
+
 export const getWorkspaceCardLayoutEntry = createLocalizedCatalog(
   (): SettingsSearchEntry => ({
     title: translate(
@@ -193,5 +233,6 @@ export const getSidebarEntries = createLocalizedCatalog((): SettingsSearchEntry[
   },
   getWorkspaceCardLayoutEntry(),
   getLeftSidebarAppearanceEntry(),
+  getWorkspaceChromeAppearanceEntry(),
   getShowPinnedWorktreesInGroupsEntry()
 ])

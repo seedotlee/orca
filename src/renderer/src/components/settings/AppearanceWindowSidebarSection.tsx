@@ -63,6 +63,7 @@ function recordStatusBarToggleInteraction(
   }
 }
 
+/** Window & Sidebar appearance section: sidebar/chrome appearance, status bar controls, and layout advanced settings. */
 export function AppearanceWindowSidebarSection({
   settings,
   updateSettings,
@@ -102,6 +103,7 @@ export function AppearanceWindowSidebarSection({
   })
   const statusBarControlMatches =
     matchesSettingsSearch(searchQuery, usagePercentageDisplayEntry) ||
+    matchesSettingsSearch(searchQuery, statusBarUsageFormatEntry) ||
     visibleStatusBarToggles.some((toggle) =>
       matchesSettingsSearch(searchQuery, {
         title: toggle.title,

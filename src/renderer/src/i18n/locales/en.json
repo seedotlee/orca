@@ -6495,7 +6495,7 @@
           },
           "workspaceChromeAppearance": {
             "title": "App Chrome Appearance",
-            "rowDescription": "Make the tab bar, status bar, side panels, and full-page views match your terminal theme, or keep the app theme.",
+            "rowDescription": "Make the tab bar, status bar, side panels, full-page views, and popovers match your terminal theme, or keep the app theme.",
             "default": "Default",
             "matchTerminal": "Match Terminal"
           }
@@ -8923,7 +8923,7 @@
             "usagePercentageDisplayDescription": "Choose whether provider limits show the percentage used or remaining.",
             "workspaceChromeAppearance": {
               "title": "App Chrome Appearance",
-              "description": "Make the tab bar, status bar, side panels, and full-page views match your terminal theme, or keep the app theme."
+              "description": "Make the tab bar, status bar, side panels, full-page views, and popovers match your terminal theme, or keep the app theme."
             },
             "statusBarUsageFormat": {
               "title": "Usage format",

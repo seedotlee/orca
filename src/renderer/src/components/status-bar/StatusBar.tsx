@@ -1174,6 +1174,7 @@ function getProviderLetter(provider: ProviderRateLimits['provider']): string {
 // Why: Gemini exposes extra experimental buckets that made the pre-existing verbose footer noisy.
 const STATUS_BAR_BUCKET_NAMES = new Set(['Flash', 'Pro', '1.5 Pro'])
 
+/** Full per-window usage text for one provider; a user template, when set, replaces the built-in layout. */
 function VerboseProviderUsage({
   p,
   display

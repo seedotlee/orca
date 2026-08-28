@@ -22,6 +22,7 @@ export type TerminalSurfaceColors = {
 
 export type SurfaceStyleVariables = Record<string, string>
 
+/** `#rgb` / `#rrggbb` to `rgba()` with the given alpha. */
 export function hexToRgba(hex: string, alpha: number): string {
   let clean = hex.trim().replace('#', '')
   if (clean.length === 3) {
@@ -36,6 +37,7 @@ export function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
+/** Applies the terminal background opacity to a hex color; other formats pass through unchanged. */
 function applyAlpha(color: string, alpha: number | undefined): string {
   if (alpha === undefined || alpha >= 1 || !HEX_COLOR_RE.test(color.trim())) {
     return color

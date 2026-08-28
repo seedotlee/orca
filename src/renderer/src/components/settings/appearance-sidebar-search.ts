@@ -35,6 +35,7 @@ export const getLeftSidebarAppearanceEntry = createLocalizedCatalog(
   })
 )
 
+/** Settings-search entry for the App Chrome Appearance row. */
 export const getWorkspaceChromeAppearanceEntry = createLocalizedCatalog(
   (): SettingsSearchEntry => ({
     title: translate(
@@ -43,7 +44,7 @@ export const getWorkspaceChromeAppearanceEntry = createLocalizedCatalog(
     ),
     description: translate(
       'auto.components.settings.appearance.search.workspaceChromeAppearance.description',
-      'Make the tab bar, status bar, side panels, and full-page views match your terminal theme, or keep the app theme.'
+      'Make the tab bar, status bar, side panels, full-page views, and popovers match your terminal theme, or keep the app theme.'
     ),
     keywords: [
       ...translateSearchKeyword(
@@ -167,6 +168,7 @@ export const getShowPinnedWorktreesInGroupsEntry = createLocalizedCatalog(
   })
 )
 
+/** Search entries for the sidebar-related appearance controls. */
 export const getSidebarEntries = createLocalizedCatalog((): SettingsSearchEntry[] => [
   {
     title: translate('auto.components.settings.appearance.search.155a1e7438', 'Show Tasks Button'),

@@ -4,6 +4,7 @@ import { buildUsageFormatValues, renderUsageFormatTemplate } from './usage-forma
 
 const NOW = Date.UTC(2026, 7, 27, 12, 0, 0)
 
+/** Rate-limit window fixture. */
 function win(
   usedPercent: number,
   windowMinutes: number,
@@ -17,6 +18,7 @@ function win(
   }
 }
 
+/** Provider limits fixture with overridable fields. */
 function provider(overrides: Partial<ProviderRateLimits>): ProviderRateLimits {
   return {
     provider: 'claude',

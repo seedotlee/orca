@@ -18,6 +18,7 @@ type LeftSidebarAppearanceSettings = TerminalSurfaceSettings &
 
 export type LeftSidebarStyleVariables = Record<string, string>
 
+/** Sidebar token variables for one color pair, optionally re-deriving the text/surface tokens too. */
 function buildSurfaceVariables(args: {
   background: string
   foreground: string
@@ -30,6 +31,7 @@ function buildSurfaceVariables(args: {
   }
 }
 
+/** Match-terminal mode: sidebar variables derived from the active terminal theme. */
 function resolveTerminalSurfaceVariables(
   settings: LeftSidebarAppearanceSettings,
   systemPrefersDark: boolean

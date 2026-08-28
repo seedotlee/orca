@@ -2351,6 +2351,7 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
     set({ statusBarUsageMode: normalized })
   },
   statusBarUsageFormat: { ...DEFAULT_STATUS_BAR_USAGE_FORMAT },
+  /** Persists the footer usage template and mirrors it into the store. */
   setStatusBarUsageFormat: (format) => {
     const normalized = normalizeStatusBarUsageFormat(format)
     window.api.ui.set({ statusBarUsageFormat: normalized }).catch(console.error)

@@ -9,6 +9,7 @@ type WorkspaceChromeAppearanceSettingProps = {
   updateSettings: (updates: Partial<GlobalSettings>) => void
 }
 
+/** Default / Match Terminal toggle for the app chrome surfaces. */
 export function WorkspaceChromeAppearanceSetting({
   settings,
   updateSettings
@@ -23,7 +24,7 @@ export function WorkspaceChromeAppearanceSetting({
       label={title}
       description={translate(
         'auto.components.settings.AppearancePane.workspaceChromeAppearance.rowDescription',
-        'Make the tab bar, status bar, side panels, and full-page views match your terminal theme, or keep the app theme.'
+        'Make the tab bar, status bar, side panels, full-page views, and popovers match your terminal theme, or keep the app theme.'
       )}
       control={
         <SettingsSegmentedControl<WorkspaceChromeAppearanceMode>

@@ -163,6 +163,7 @@ export const getTitlebarEntries = createLocalizedCatalog((): SettingsSearchEntry
   }
 ])
 
+/** Search entries for every Status Bar control, including the per-provider toggles. */
 export const getStatusBarEntries = createLocalizedCatalog((): SettingsSearchEntry[] => [
   getUsagePercentageDisplayEntry(),
   getStatusBarUsageFormatEntry(),

@@ -6,6 +6,7 @@ import {
   resolveWorkspaceChromeStyleVariables
 } from './workspace-chrome-appearance'
 
+/** Settings fixture in match-terminal mode unless overridden. */
 function settings(overrides = {}) {
   return {
     ...getDefaultSettings(tmpdir()),
@@ -106,6 +107,7 @@ describe('resolveWorkspaceChromeStyleVariables', () => {
 })
 
 describe('applyWorkspaceChromeStyleVariables', () => {
+  /** Minimal CSSStyleDeclaration stand-in recording set/removed properties. */
   function fakeStyle() {
     const props = new Map<string, string>()
     return {

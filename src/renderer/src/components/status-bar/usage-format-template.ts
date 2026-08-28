@@ -13,6 +13,7 @@ const PLACEHOLDER_RE = /\{([a-zA-Z0-9_.]+)\}/g
 // Why: one level of brackets only — nested optional groups aren't worth the parsing cost for a footer string.
 const OPTIONAL_GROUP_RE = /\[([^[\]]*)\]/g
 
+/** Replaces known `{key}` placeholders; unknown ones are left verbatim. */
 function substitute(text: string, values: UsageFormatValues): string {
   return text.replace(PLACEHOLDER_RE, (match, key: string) =>
     Object.hasOwn(values, key) ? values[key] : match
@@ -54,10 +55,12 @@ const WINDOW_KEYS: readonly [
 // Same subset and order the built-in Gemini rendering shows.
 const BUCKET_ORDER = ['Flash', 'Pro', '1.5 Pro']
 
+/** Window percentage in the user's Used/Remaining preference. */
 function percent(window: RateLimitWindow, display: UsagePercentageDisplay): string {
   return `${getDisplayedUsagePercentage(window.usedPercent, display)}%`
 }
 
+/** Reset time as a 24h clock string in the viewer's zone. */
 function resetClock(resetsAt: number, options: UsageFormatValueOptions): string {
   return new Intl.DateTimeFormat(options.locale, {
     hour: '2-digit',

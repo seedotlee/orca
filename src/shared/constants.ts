@@ -239,6 +239,7 @@ export function getDefaultPersistedState(homedir: string): PersistedState {
   }
 }
 
+/** Fresh persisted UI state for a first launch. */
 export function getDefaultUIState(): PersistedUIState {
   return {
     lastActiveRepoId: null,

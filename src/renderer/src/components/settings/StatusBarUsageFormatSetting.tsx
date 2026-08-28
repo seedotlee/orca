@@ -32,7 +32,7 @@ const PLACEHOLDERS: readonly [token: string, fallback: string, key: string][] = 
   ['[ … ]', 'dropped when a placeholder inside is empty', 'optional']
 ]
 
-// Why: a fixed sample keeps the preview meaningful before any provider has reported usage.
+/** Fixed sample so the preview reads meaningfully before any provider has reported usage. */
 function sampleLimits(now: number): ProviderRateLimits {
   const hours = 60 * 60 * 1000
   return {
@@ -61,6 +61,7 @@ function sampleLimits(now: number): ProviderRateLimits {
   }
 }
 
+/** Template editor for the footer usage text, with a live preview rendered against sample limits. */
 export function StatusBarUsageFormatSetting({
   format,
   onChange

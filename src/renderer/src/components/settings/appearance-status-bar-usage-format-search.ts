@@ -3,6 +3,7 @@ import { translate } from '@/i18n/i18n'
 import type { SettingsSearchEntry } from './settings-search'
 import { translateSearchKeyword } from './settings-search-keywords'
 
+/** Settings-search entry for the status bar usage format template. */
 export const getStatusBarUsageFormatEntry = createLocalizedCatalog(
   (): SettingsSearchEntry => ({
     title: translate(

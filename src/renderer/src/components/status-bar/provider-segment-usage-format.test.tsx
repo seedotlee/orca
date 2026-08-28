@@ -27,10 +27,12 @@ vi.mock('../../store', () => ({
   ) => selector({ usagePercentageDisplay: 'used', statusBarUsageFormat })
 }))
 
+/** Rate-limit window fixture with only the fields the template reads. */
 function windowOf(usedPercent: number, windowMinutes: number): RateLimitWindow {
   return { usedPercent, windowMinutes, resetsAt: null, resetDescription: null }
 }
 
+/** Claude limits fixture covering the 5h and 7d windows. */
 function claudeLimits(): ProviderRateLimits {
   return {
     provider: 'claude',

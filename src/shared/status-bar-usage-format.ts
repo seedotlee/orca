@@ -22,10 +22,12 @@ export type StatusBarUsageFormat = {
 
 export const DEFAULT_STATUS_BAR_USAGE_FORMAT: StatusBarUsageFormat = { template: '' }
 
+/** Plain-object guard for persisted JSON. */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+/** Coerces persisted/RPC input into a valid format, dropping unknown providers and non-string overrides. */
 export function normalizeStatusBarUsageFormat(value: unknown): StatusBarUsageFormat {
   if (!isRecord(value)) {
     return { ...DEFAULT_STATUS_BAR_USAGE_FORMAT }

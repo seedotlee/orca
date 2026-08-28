@@ -1,6 +1,7 @@
 import type { GlobalSettings } from '../../../shared/global-settings-types'
 import { HEX_COLOR_RE } from '../../../shared/color-validation'
 import { resolveEffectiveTerminalAppearance } from './terminal-theme'
+import { resolveMutedForegroundMixPercent } from './muted-foreground-contrast'
 
 export type TerminalSurfaceSettings = Pick<
   GlobalSettings,
@@ -62,11 +63,12 @@ export function resolveTerminalSurfaceColors(
 
 /** Re-derives the shadcn text/surface token family from a terminal color pair so chrome scoped
  *  under it keeps readable contrast regardless of the app theme. Mix ratios match the global
- *  tokens (7% border, #5906). */
+ *  tokens (7% border, #5906) except muted text, which is contrast-gated. */
 export function buildSurfaceTextTokenVariables({
   background,
   foreground
 }: TerminalSurfaceColors): SurfaceStyleVariables {
+  const mutedPercent = resolveMutedForegroundMixPercent(background, foreground)
   return {
     '--background': background,
     '--foreground': foreground,
@@ -75,7 +77,7 @@ export function buildSurfaceTextTokenVariables({
     '--accent': `color-mix(in srgb, ${foreground} 9%, ${background})`,
     '--accent-foreground': foreground,
     '--muted': `color-mix(in srgb, ${foreground} 7%, ${background})`,
-    '--muted-foreground': `color-mix(in srgb, ${foreground} 62%, ${background})`,
+    '--muted-foreground': `color-mix(in srgb, ${foreground} ${mutedPercent}%, ${background})`,
     '--border': `color-mix(in srgb, ${foreground} 7%, ${background})`,
     '--popover': `color-mix(in srgb, ${foreground} 4%, ${background})`,
     '--popover-foreground': foreground,

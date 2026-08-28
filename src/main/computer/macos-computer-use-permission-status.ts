@@ -8,6 +8,7 @@ import type {
   ComputerUsePermissionStatus,
   ComputerUsePermissionStatusResult
 } from '../../shared/computer-use-permissions-types'
+import { COMPUTER_USE_HELPER_MISSING_MESSAGE } from './macos-computer-use-helper-missing'
 import {
   resolveMacOSComputerUseAppPath,
   resolveMacOSComputerUseExecutablePath
@@ -35,7 +36,7 @@ async function getComputerUsePermissionStatusAsync(): Promise<ComputerUsePermiss
 
   const helperAppPath = resolveMacOSComputerUseAppPath()
   if (!helperAppPath) {
-    return createUnavailablePermissionStatus('Orca Computer Use.app was not found', null)
+    return createUnavailablePermissionStatus(COMPUTER_USE_HELPER_MISSING_MESSAGE, null)
   }
 
   const executablePath = resolveMacOSComputerUseExecutablePath()

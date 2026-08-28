@@ -18,6 +18,7 @@ const {
   verifyPackagedNodePtyJobOwnership
 } = require('./scripts/verify-packaged-node-pty-job-ownership.cjs')
 const { verifySkillsCliRuntime } = require('./scripts/verify-skills-cli-runtime.cjs')
+const distributionIdentity = require('../src/shared/distribution-identity.json')
 
 // Why: dev-channel builds must carry the *release* identity — same bundle id,
 // Developer ID signature, and notarization ticket — or Squirrel.Mac refuses to
@@ -55,13 +56,15 @@ const devChannelBuildVersion = isHourlyChannel
 // or a once-a-day cut cannot be picked up by someone who only meant to ride
 // main's hourlies.
 const devChannelRepo = isHourlyChannel
-  ? 'orca-hourly'
+  ? `${distributionIdentity.githubRepo}-hourly`
   : isDailyChannel
-    ? 'orca-daily'
+    ? `${distributionIdentity.githubRepo}-daily`
     : isAdhocChannel
-      ? 'orca-adhoc'
+      ? `${distributionIdentity.githubRepo}-adhoc`
       : null
-const appId = 'com.stablyai.orca'
+const appId = distributionIdentity.appBundleId
+const productName = distributionIdentity.productName
+const computerUseHelperAppName = `${productName} Computer Use.app`
 const featureWallResources = {
   from: 'resources/onboarding/feature-wall',
   to: 'onboarding/feature-wall'
@@ -106,8 +109,8 @@ const winSpeechNativeResource = {
 /** @type {import('electron-builder').Configuration} */
 module.exports = {
   appId,
-  productName: 'Orca',
-  protocols: [{ name: 'Orca', schemes: ['orca'] }],
+  productName,
+  protocols: [{ name: productName, schemes: ['orca'] }],
   ...(devChannelBuildVersion
     ? { extraMetadata: { version: devChannelBuildVersion } }
     : localBuildVersion
@@ -310,7 +313,7 @@ module.exports = {
       chmodSync(join(resourcesDir, filename), 0o755)
     }
     if (context.electronPlatformName === 'darwin') {
-      await signMacComputerUseHelper(join(resourcesDir, 'Orca Computer Use.app'), context.packager)
+      await signMacComputerUseHelper(join(resourcesDir, computerUseHelperAppName), context.packager)
       await signMacStandaloneHelper(
         join(resourcesDir, '..', 'MacOS', 'orca-notification-status'),
         'orca-notification-status',
@@ -324,7 +327,7 @@ module.exports = {
     }
   },
   win: {
-    executableName: 'Orca',
+    executableName: productName,
     // Why: Windows installers are signed after electron-builder packaging by
     // SignPath, so the packager cannot infer the updater publisherName.
     //
@@ -377,20 +380,14 @@ module.exports = {
     entitlements: 'resources/build/entitlements.mac.plist',
     entitlementsInherit: 'resources/build/entitlements.mac.plist',
     extendInfo: {
-      NSAppleEventsUsageDescription:
-        'Orca allows terminal-launched developer tools to automate local apps when you request it.',
-      NSBluetoothAlwaysUsageDescription:
-        'Orca allows terminal-launched developer tools to access Bluetooth devices when you request it.',
-      NSBluetoothPeripheralUsageDescription:
-        'Orca allows terminal-launched developer tools to access Bluetooth devices when you request it.',
+      NSAppleEventsUsageDescription: `${productName} allows terminal-launched developer tools to automate local apps when you request it.`,
+      NSBluetoothAlwaysUsageDescription: `${productName} allows terminal-launched developer tools to access Bluetooth devices when you request it.`,
+      NSBluetoothPeripheralUsageDescription: `${productName} allows terminal-launched developer tools to access Bluetooth devices when you request it.`,
       NSCameraUsageDescription: "Application requests access to the device's camera.",
-      NSLocationUsageDescription:
-        'Orca allows terminal-launched developer tools to access location when you request it.',
-      NSLocalNetworkUsageDescription:
-        'Orca allows terminal-launched developer tools to discover and connect to local development servers when you request it.',
+      NSLocationUsageDescription: `${productName} allows terminal-launched developer tools to access location when you request it.`,
+      NSLocalNetworkUsageDescription: `${productName} allows terminal-launched developer tools to discover and connect to local development servers when you request it.`,
       NSMicrophoneUsageDescription: "Application requests access to the device's microphone.",
-      NSAudioCaptureUsageDescription:
-        'Orca allows terminal-launched developer tools to capture desktop audio when you request it.',
+      NSAudioCaptureUsageDescription: `${productName} allows terminal-launched developer tools to capture desktop audio when you request it.`,
       NSBonjourServices: ['_http._tcp', '_https._tcp'],
       NSDocumentsFolderUsageDescription:
         "Application requests access to the user's Documents folder.",
@@ -429,8 +426,8 @@ module.exports = {
         to: 'serve-sim'
       },
       {
-        from: 'native/computer-use-macos/.build/release/Orca Computer Use.app',
-        to: 'Orca Computer Use.app'
+        from: `native/computer-use-macos/.build/release/${computerUseHelperAppName}`,
+        to: computerUseHelperAppName
       },
       featureWallResources
     ],
@@ -552,8 +549,8 @@ module.exports = {
   npmRebuild: true,
   publish: {
     provider: 'github',
-    owner: 'stablyai',
-    repo: devChannelRepo ?? 'orca',
+    owner: distributionIdentity.githubOwner,
+    repo: devChannelRepo ?? distributionIdentity.githubRepo,
     releaseType: devChannelRepo ? 'prerelease' : 'release'
   }
 }

@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 
+import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
+
+const { githubOwner, githubRepo } = createRequire(import.meta.url)(
+  '../../src/shared/distribution-identity.json'
+)
+const DEFAULT_RELEASE_REPO = `${githubOwner}/${githubRepo}`
 
 const API_VERSION = '2022-11-28'
 
@@ -150,7 +156,7 @@ async function main() {
   if (!token) {
     throw new Error('GH_TOKEN or GITHUB_TOKEN must be set')
   }
-  const repo = process.env.GITHUB_REPOSITORY || 'stablyai/orca'
+  const repo = process.env.GITHUB_REPOSITORY || DEFAULT_RELEASE_REPO
   const result = await verifyRequiredReleaseAssets({ repo, tag, token })
   console.log(`Verified ${result.checked.length} required release assets for ${repo}@${tag}`)
 }

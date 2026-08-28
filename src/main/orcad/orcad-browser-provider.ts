@@ -13,6 +13,11 @@ import {
 } from './external-chromium-browser-process'
 import { resolveOrcadAgentBrowserBinary } from './orcad-agent-browser-binary'
 import { ElectronServeBrowserProcess } from './electron-serve-browser-process'
+import {
+  APP_BUNDLE_DIR_NAME,
+  APP_PRODUCT_NAME,
+  APP_WINDOWS_EXECUTABLE_NAME
+} from '../../shared/distribution-identity'
 
 export type OrcadBrowserProvider = {
   kind: 'electron' | 'chromium'
@@ -65,16 +70,25 @@ export function installedElectronCandidates(
   const joinPath = platform === 'win32' ? win32.join : posix.join
   if (platform === 'darwin') {
     return [
-      '/Applications/Orca.app/Contents/MacOS/Orca',
-      joinPath(homePath, 'Applications', 'Orca.app', 'Contents', 'MacOS', 'Orca')
+      joinPath('/Applications', APP_BUNDLE_DIR_NAME, 'Contents', 'MacOS', APP_PRODUCT_NAME),
+      joinPath(homePath, 'Applications', APP_BUNDLE_DIR_NAME, 'Contents', 'MacOS', APP_PRODUCT_NAME)
     ]
   }
   if (platform === 'win32') {
     return [
       ...(environment.LOCALAPPDATA
-        ? [joinPath(environment.LOCALAPPDATA, 'Programs', 'Orca', 'Orca.exe')]
+        ? [
+            joinPath(
+              environment.LOCALAPPDATA,
+              'Programs',
+              APP_PRODUCT_NAME,
+              APP_WINDOWS_EXECUTABLE_NAME
+            )
+          ]
         : []),
-      ...(environment.ProgramFiles ? [joinPath(environment.ProgramFiles, 'Orca', 'Orca.exe')] : [])
+      ...(environment.ProgramFiles
+        ? [joinPath(environment.ProgramFiles, APP_PRODUCT_NAME, APP_WINDOWS_EXECUTABLE_NAME)]
+        : [])
     ]
   }
   return [

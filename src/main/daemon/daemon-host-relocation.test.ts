@@ -163,7 +163,7 @@ describe('materializeRelocatedDaemonHost', () => {
   it('copies the tree, writes the marker, and returns mirrored fork paths', () => {
     const result = materializeRelocatedDaemonHost()
     expect(result).not.toBeNull()
-    const dest = join(localAppDataDir, 'Orca', 'daemon-host', '9.9.9')
+    const dest = join(localAppDataDir, 'Orcaly', 'daemon-host', '9.9.9')
     expect(result?.execPath).toBe(join(dest, 'orca-terminal-daemon.exe'))
     expect(result?.entryPath).toBe(
       join(dest, 'resources', 'app.asar.unpacked', 'out', 'main', 'daemon-entry.js')
@@ -199,7 +199,7 @@ describe('materializeRelocatedDaemonHost', () => {
 
   it('is idempotent: a valid marker short-circuits without recopying', () => {
     materializeRelocatedDaemonHost()
-    const dest = join(localAppDataDir, 'Orca', 'daemon-host', '9.9.9')
+    const dest = join(localAppDataDir, 'Orcaly', 'daemon-host', '9.9.9')
     // A recopy would rm the dest; a sentinel inside it must survive the 2nd call.
     const sentinel = join(dest, 'sentinel.txt')
     writeFileSync(sentinel, 'keep')
@@ -215,7 +215,7 @@ describe('materializeRelocatedDaemonHost', () => {
     })
     const result = materializeRelocatedDaemonHost()
     expect(result).toBeNull()
-    const hostRoot = join(localAppDataDir, 'Orca', 'daemon-host')
+    const hostRoot = join(localAppDataDir, 'Orcaly', 'daemon-host')
     // Neither the published dest nor any leftover staging dir remains.
     const remaining = existsSync(hostRoot) ? readdirSync(hostRoot) : []
     expect(remaining).toEqual([])
@@ -224,7 +224,7 @@ describe('materializeRelocatedDaemonHost', () => {
   it('returns null off win32', () => {
     setProcessProp('platform', 'darwin')
     expect(materializeRelocatedDaemonHost()).toBeNull()
-    expect(existsSync(join(localAppDataDir, 'Orca', 'daemon-host'))).toBe(false)
+    expect(existsSync(join(localAppDataDir, 'Orcaly', 'daemon-host'))).toBe(false)
   })
 
   it('does nothing for a packaged host with no asar root (orcad on win32)', () => {
@@ -236,13 +236,13 @@ describe('materializeRelocatedDaemonHost', () => {
     installHostApp()
     expect(materializeRelocatedDaemonHost()).toBeNull()
     expect(getRelocatedDaemonHost()).toBeNull()
-    expect(existsSync(join(localAppDataDir, 'Orca', 'daemon-host'))).toBe(false)
+    expect(existsSync(join(localAppDataDir, 'Orcaly', 'daemon-host'))).toBe(false)
   })
 })
 
 describe('getRelocatedDaemonHost', () => {
   it('returns null when the marker version does not match the current version', () => {
-    const dest = join(localAppDataDir, 'Orca', 'daemon-host', '9.9.9')
+    const dest = join(localAppDataDir, 'Orcaly', 'daemon-host', '9.9.9')
     mkdirSync(dirname(join(dest, 'x')), { recursive: true })
     writeFileSync(join(dest, 'Orca.exe'), 'exe')
     mkdirSync(join(dest, 'resources', 'app.asar.unpacked', 'out', 'main'), { recursive: true })
@@ -264,7 +264,7 @@ describe('getRelocatedDaemonHost', () => {
 
 describe('pruneOldDaemonHosts', () => {
   it('removes unpinned non-current version dirs, keeping current and pinned', () => {
-    const root = join(localAppDataDir, 'Orca', 'daemon-host')
+    const root = join(localAppDataDir, 'Orcaly', 'daemon-host')
     for (const v of ['9.9.9', '1.0.0', '2.0.0']) {
       mkdirSync(join(root, v), { recursive: true })
     }
@@ -275,7 +275,7 @@ describe('pruneOldDaemonHosts', () => {
   })
 
   it('reclaims nothing for a packaged host with no asar root (orcad on win32)', () => {
-    const root = join(localAppDataDir, 'Orca', 'daemon-host')
+    const root = join(localAppDataDir, 'Orcaly', 'daemon-host')
     mkdirSync(join(root, '1.0.0'), { recursive: true })
     hostApp.appPath = join(installDir, 'resources', 'app')
     installHostApp()

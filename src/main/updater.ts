@@ -84,6 +84,7 @@ import {
   type ReleaseBuild,
   type ReleaseChannel
 } from '../shared/release-channel'
+import { MAIN_RELEASE_LATEST_DOWNLOAD_URL } from '../shared/distribution-identity'
 
 type CheckFailureSource = 'event' | 'promise' | 'fallback-promise'
 type MissingManifestPrereleaseFallbackResult = { userInitiated: boolean }
@@ -1443,7 +1444,7 @@ async function pinDefaultReleaseFeed(
   } else {
     clearPrereleaseFallbackContext()
     clearPublishingWindowLastGoodCheck()
-    const url = 'https://github.com/stablyai/orca/releases/latest/download'
+    const url = MAIN_RELEASE_LATEST_DOWNLOAD_URL
     console.info(
       `[updater] release feed fallback: current=${currentVersion} includePrerelease=${includePrerelease} → ${url}`
     )
@@ -2226,7 +2227,7 @@ export function setupAutoUpdater(
   if (activeUpdateSource === 'release') {
     autoUpdater.setFeedURL({
       provider: 'generic',
-      url: 'https://github.com/stablyai/orca/releases/latest/download'
+      url: MAIN_RELEASE_LATEST_DOWNLOAD_URL
     })
   }
 

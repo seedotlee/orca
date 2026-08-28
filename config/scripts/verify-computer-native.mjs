@@ -4,6 +4,10 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
+import { createRequire } from 'node:module'
+const { productName } = createRequire(import.meta.url)(
+  '../../src/shared/distribution-identity.json'
+)
 
 const repoRoot = resolve(import.meta.dirname, '..', '..')
 const checks = [
@@ -148,7 +152,7 @@ function verifyMacOSHelperApp() {
     'computer-use-macos',
     '.build',
     'release',
-    'Orca Computer Use.app'
+    `${productName} Computer Use.app`
   )
   if (!existsSync(appPath)) {
     console.error(

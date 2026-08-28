@@ -1,6 +1,7 @@
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
 import { join } from 'node:path'
 import { RuntimeClientError } from './runtime-client-error'
+import { COMPUTER_USE_HELPER_MISSING_MESSAGE } from './macos-computer-use-helper-missing'
 import { resolveMacOSComputerUseAppPath } from './macos-native-provider-paths'
 import { getComputerUsePermissionStatus } from './macos-computer-use-permission-status'
 import type {
@@ -9,8 +10,12 @@ import type {
   ComputerUsePermissionSetupResult,
   ComputerUsePermissionStatusResult
 } from '../../shared/computer-use-permissions-types'
+import {
+  COMPUTER_USE_BUNDLE_ID,
+  COMPUTER_USE_HELPER_NAME
+} from '../../shared/distribution-identity'
 
-const DEFAULT_COMPUTER_USE_BUNDLE_ID = 'com.stablyai.orca.computer-use'
+const DEFAULT_COMPUTER_USE_BUNDLE_ID = COMPUTER_USE_BUNDLE_ID
 
 export { getComputerUsePermissionStatus } from './macos-computer-use-permission-status'
 
@@ -40,7 +45,7 @@ async function openComputerUsePermissionsAsync(
 
   const helperAppPath = resolveMacOSComputerUseAppPath()
   if (!helperAppPath) {
-    throw new RuntimeClientError('accessibility_error', 'Orca Computer Use.app was not found')
+    throw new RuntimeClientError('accessibility_error', COMPUTER_USE_HELPER_MISSING_MESSAGE)
   }
   const status = await getComputerUsePermissionStatus()
   if (status.helperUnavailableReason) {
@@ -99,7 +104,7 @@ async function resetComputerUsePermissionsAsync(): Promise<ComputerUsePermission
 
   const helperAppPath = resolveMacOSComputerUseAppPath()
   if (!helperAppPath) {
-    throw new RuntimeClientError('accessibility_error', 'Orca Computer Use.app was not found')
+    throw new RuntimeClientError('accessibility_error', COMPUTER_USE_HELPER_MISSING_MESSAGE)
   }
 
   const status = await getComputerUsePermissionStatus()
@@ -171,5 +176,5 @@ function nextPermissionStep(
   if (!missing) {
     return null
   }
-  return `Grant ${missing.id === 'accessibility' ? 'Accessibility' : 'Screen Recording'} to Orca Computer Use, then retry get-app-state.`
+  return `Grant ${missing.id === 'accessibility' ? 'Accessibility' : 'Screen Recording'} to ${COMPUTER_USE_HELPER_NAME}, then retry get-app-state.`
 }

@@ -17,7 +17,7 @@ import {
   type PendingNativeRequest,
   writeNativeProviderLine
 } from './macos-native-provider-contract'
-import { resolveMacOSComputerUseExecutablePath } from './macos-native-provider-paths'
+import { requireMacOSComputerUseExecutablePath } from './macos-computer-use-helper-missing'
 import {
   attachMacOSNativeProviderSocketListeners,
   consumeNativeProviderLines,
@@ -94,10 +94,7 @@ export class MacOSNativeProviderClient {
   }
   private async send(method: NativeMethod, params: unknown): Promise<unknown> {
     const id = this.nextId++
-    const helperExecutablePath = resolveMacOSComputerUseExecutablePath()
-    if (!helperExecutablePath) {
-      throw new RuntimeClientError('accessibility_error', 'Orca Computer Use.app was not found')
-    }
+    const helperExecutablePath = requireMacOSComputerUseExecutablePath()
     const transport = await this.ensureSocketStarted(helperExecutablePath)
     const token = this.socketToken
     const line = `${JSON.stringify({ id, method, params, token })}\n`

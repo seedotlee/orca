@@ -22,6 +22,10 @@ import {
   writeProcessRecord
 } from './macos-computer-helper-owner-loss-processes.mjs'
 import { cleanupOwnerLossTrial } from './macos-computer-helper-owner-loss-trial-cleanup.mjs'
+import { createRequire } from 'node:module'
+const { productName } = createRequire(import.meta.url)(
+  '../../src/shared/distribution-identity.json'
+)
 
 const INTERNAL_ENV = 'ORCA_COMPUTER_HELPER_OWNER_BENCH_INTERNAL'
 const EXPECTATION_ENV = 'ORCA_COMPUTER_HELPER_OWNER_BENCH_EXPECTATION'
@@ -52,7 +56,7 @@ const helperAppPath = path.join(
   'computer-use-macos',
   '.build',
   'release',
-  'Orca Computer Use.app'
+  `${productName} Computer Use.app`
 )
 const helperPath = path.join(helperAppPath, 'Contents', 'MacOS', 'orca-computer-use-macos')
 

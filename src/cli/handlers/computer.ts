@@ -28,6 +28,7 @@ import {
   getComputerSetValueActionFlags,
   getComputerTextActionFlags
 } from './computer-action-flags'
+import { COMPUTER_USE_HELPER_NAME } from '../../shared/distribution-identity'
 
 export const COMPUTER_HANDLERS: Record<string, CommandHandler> = {
   'computer capabilities': async ({ client, json }) => {
@@ -53,7 +54,7 @@ export const COMPUTER_HANDLERS: Record<string, CommandHandler> = {
         return 'Computer-use permission setup is only required on macOS.'
       }
       const firstLine = value.launchedHelper
-        ? 'Opened Orca Computer Use permission setup.'
+        ? `Opened ${COMPUTER_USE_HELPER_NAME} permission setup.`
         : 'Computer Use permissions checked.'
       return [
         firstLine,
@@ -63,7 +64,7 @@ export const COMPUTER_HANDLERS: Record<string, CommandHandler> = {
           ? `Next: ${value.nextStep}`
           : 'Computer Use permissions are already granted.',
         value.launchedHelper
-          ? 'Use the Allow buttons or drag "Orca Computer Use" into the macOS permission list.'
+          ? `Use the Allow buttons or drag "${COMPUTER_USE_HELPER_NAME}" into the macOS permission list.`
           : null
       ]
         .filter((line) => line !== null)

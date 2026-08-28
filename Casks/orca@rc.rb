@@ -5,14 +5,14 @@ cask "orca@rc" do
   sha256 arm:   "563b6b14323fc9d5489299c82442d514bc12cabffc9d06d3964ed572af4b3955",
          intel: "457088c7021f07de1a419197f7b2bd00092741ad4727d4fef3d86af38a6831e7"
 
-  url "https://github.com/stablyai/orca/releases/download/v#{version}/orca-macos-#{arch}.dmg",
-      verified: "github.com/stablyai/orca/"
-  name "Orca RC"
+  url "https://github.com/seedotlee/orca/releases/download/v#{version}/orca-macos-#{arch}.dmg",
+      verified: "github.com/seedotlee/orca/"
+  name "Orcaly RC"
   desc "IDE for orchestrating AI coding agents across terminals and worktrees"
   homepage "https://onorca.dev/"
 
   livecheck do
-    url "https://github.com/stablyai/orca"
+    url "https://github.com/seedotlee/orca"
     regex(/^v?(\d+(?:\.\d+)+-rc\.\d+)$/i)
     strategy :github_releases do |json, regex|
       json.map do |release|
@@ -33,14 +33,14 @@ cask "orca@rc" do
   conflicts_with cask: "orca"
   depends_on macos: :big_sur
 
-  app "Orca.app"
+  app "Orcaly.app"
 
   # Why: expose the bundled `orca` CLI on PATH at install time (Homebrew symlinks
   # this into its already-on-PATH bin dir). Without it, the CLI is only registered
   # by the in-app "Install CLI" action, which a headless host can never trigger —
   # so `orca serve` on a server would be unreachable from the shell. The shim
   # resolves the real app by walking symlinks, so the Homebrew symlink works.
-  binary "#{appdir}/Orca.app/Contents/Resources/bin/orca"
+  binary "#{appdir}/Orcaly.app/Contents/Resources/bin/orca"
 
   # Why: Orca writes user data under ~/.orca (worktrees, agent state) and
   # Electron's standard userData directories. Zap removes everything the app
@@ -48,10 +48,10 @@ cask "orca@rc" do
   zap trash: [
     "~/.orca",
     "~/Library/Application Support/Orca",
-    "~/Library/Caches/com.stablyai.orca",
-    "~/Library/Caches/com.stablyai.orca.ShipIt",
-    "~/Library/HTTPStorages/com.stablyai.orca",
-    "~/Library/Preferences/com.stablyai.orca.plist",
-    "~/Library/Saved Application State/com.stablyai.orca.savedState",
+    "~/Library/Caches/com.seedotlee.orca",
+    "~/Library/Caches/com.seedotlee.orca.ShipIt",
+    "~/Library/HTTPStorages/com.seedotlee.orca",
+    "~/Library/Preferences/com.seedotlee.orca.plist",
+    "~/Library/Saved Application State/com.seedotlee.orca.savedState",
   ]
 end

@@ -1,11 +1,16 @@
 import { spawnSync } from 'node:child_process'
 import { chmodSync, copyFileSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import path from 'node:path'
 
 const repoRoot = path.resolve(import.meta.dirname, '../..')
+const { appBundleId, productName } = createRequire(import.meta.url)(
+  '../../src/shared/distribution-identity.json'
+)
+const displayName = `${productName} Computer Use`
 const packagePath = path.join(repoRoot, 'native', 'computer-use-macos')
 const binaryPath = path.join(packagePath, '.build', 'release', 'orca-computer-use-macos')
-const appPath = path.join(packagePath, '.build', 'release', 'Orca Computer Use.app')
+const appPath = path.join(packagePath, '.build', 'release', `${displayName}.app`)
 const appExecutablePath = path.join(appPath, 'Contents', 'MacOS', 'orca-computer-use-macos')
 const appIconPath = path.join(appPath, 'Contents', 'Resources', 'AppIcon.icns')
 const entitlementsPath = path.join(
@@ -14,8 +19,7 @@ const entitlementsPath = path.join(
   'build',
   'entitlements.computer-use.mac.plist'
 )
-const bundleId = process.env.ORCA_COMPUTER_MACOS_BUNDLE_ID ?? 'com.stablyai.orca.computer-use'
-const displayName = 'Orca Computer Use'
+const bundleId = process.env.ORCA_COMPUTER_MACOS_BUNDLE_ID ?? `${appBundleId}.computer-use`
 const signingIdentity = resolveSigningIdentity()
 const universalTriples = ['arm64-apple-macosx', 'x86_64-apple-macosx']
 

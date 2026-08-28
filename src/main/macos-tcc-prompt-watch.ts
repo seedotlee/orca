@@ -1,6 +1,14 @@
 import { spawn, type ChildProcessByStdio } from 'node:child_process'
 import { createInterface, type Interface } from 'node:readline'
 import type { Readable } from 'node:stream'
+import {
+  APP_BUNDLE_ID,
+  APP_HELPER_BUNDLE_ID,
+  DEV_APP_BUNDLE_ID,
+  DEV_APP_HELPER_BUNDLE_ID,
+  LOCAL_APP_BUNDLE_ID,
+  LOCAL_APP_HELPER_BUNDLE_ID
+} from '../shared/distribution-identity'
 
 /** Why: stdin is 'ignore', so this is narrower than ChildProcessWithoutNullStreams. */
 export type LogStreamChild = ChildProcessByStdio<null, Readable, Readable>
@@ -19,12 +27,12 @@ export type LogStreamChild = ChildProcessByStdio<null, Readable, Readable>
 
 /** Why: terminals run from the detached helper, which TCC can hold responsible independently. */
 const ORCA_RESPONSIBLE_IDENTIFIERS = new Set([
-  'com.stablyai.orca',
-  'com.stablyai.orca.helper',
-  'com.stablyai.orca.dev',
-  'com.stablyai.orca.dev.helper',
-  'com.stablyai.orca.local',
-  'com.stablyai.orca.local.helper'
+  APP_BUNDLE_ID,
+  APP_HELPER_BUNDLE_ID,
+  DEV_APP_BUNDLE_ID,
+  DEV_APP_HELPER_BUNDLE_ID,
+  LOCAL_APP_BUNDLE_ID,
+  LOCAL_APP_HELPER_BUNDLE_ID
 ])
 
 /** Why: the prompt classes #9756 is about — other-apps' data plus the protected home folders agents sweep. */

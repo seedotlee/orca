@@ -9,7 +9,7 @@ link="/usr/bin/orca-ide"
 if [ -L "$link" ]; then
   target="$(readlink "$link" || true)"
   case "$target" in
-    /opt/Orca/*|/opt/orca-ide/*|/opt/orca/*)
+    /opt/Orcaly/*|/opt/Orca/*|/opt/orca-ide/*|/opt/orca/*)
       rm -f "$link"
       ;;
   esac

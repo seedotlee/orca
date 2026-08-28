@@ -11,7 +11,7 @@ set -e
 
 link="/usr/bin/orca-ide"
 
-for dir in /opt/Orca /opt/orca-ide /opt/orca; do
+for dir in /opt/Orcaly /opt/Orca /opt/orca-ide /opt/orca; do
   sandbox="$dir/chrome-sandbox"
   if [ -f "$sandbox" ]; then
     # Why: packaged Linux installs must leave Chromium's sandbox helper usable

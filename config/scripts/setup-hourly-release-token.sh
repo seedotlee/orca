@@ -29,8 +29,8 @@ if [[ -o xtrace ]]; then
 fi
 set +x
 
-MAIN_REPO="stablyai/orca"
-HOURLY_REPO="stablyai/orca-hourly"
+MAIN_REPO="$(node -p "const i=require(process.argv[1]);i.githubOwner+'/'+i.githubRepo" "$(dirname "$0")/../../src/shared/distribution-identity.json")"
+HOURLY_REPO="${MAIN_REPO}-hourly"
 APP_ID_SECRET="HOURLY_RELEASE_APP_ID"
 APP_KEY_SECRET="HOURLY_RELEASE_APP_PRIVATE_KEY"
 

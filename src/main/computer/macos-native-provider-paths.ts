@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { COMPUTER_USE_HELPER_BUNDLE_DIR_NAME } from '../../shared/distribution-identity'
 
 export function resolveMacOSComputerUseAppPath(): string | null {
   const override = process.env.ORCA_COMPUTER_MACOS_HELPER_APP_PATH
@@ -7,10 +8,18 @@ export function resolveMacOSComputerUseAppPath(): string | null {
     return override
   }
 
-  const packaged = [join(process.resourcesPath ?? '', 'Orca Computer Use.app')]
+  const packaged = [join(process.resourcesPath ?? '', COMPUTER_USE_HELPER_BUNDLE_DIR_NAME)]
   const dev = [
-    join(process.cwd(), 'native/computer-use-macos/.build/release/Orca Computer Use.app'),
-    resolve(__dirname, '../../native/computer-use-macos/.build/release/Orca Computer Use.app')
+    join(
+      process.cwd(),
+      'native/computer-use-macos/.build/release',
+      COMPUTER_USE_HELPER_BUNDLE_DIR_NAME
+    ),
+    resolve(
+      __dirname,
+      '../../native/computer-use-macos/.build/release',
+      COMPUTER_USE_HELPER_BUNDLE_DIR_NAME
+    )
   ]
   const candidates = process.resourcesPath ? [...packaged, ...dev] : dev
 

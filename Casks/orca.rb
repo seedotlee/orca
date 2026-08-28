@@ -5,9 +5,9 @@ cask "orca" do
   sha256 arm:   "fc707f290ff3b631b7b7947bf339885b61a43d2e89475997c125b61268ed4966",
          intel: "5f677c13a08f7a5740442e29d388285a86488c8c1f7aa5f10a8721a2c6ede8e4"
 
-  url "https://github.com/stablyai/orca/releases/download/v#{version}/orca-macos-#{arch}.dmg",
-      verified: "github.com/stablyai/orca/"
-  name "Orca"
+  url "https://github.com/seedotlee/orca/releases/download/v#{version}/orca-macos-#{arch}.dmg",
+      verified: "github.com/seedotlee/orca/"
+  name "Orcaly"
   desc "IDE for orchestrating AI coding agents across terminals and worktrees"
   homepage "https://onorca.dev/"
 
@@ -17,7 +17,7 @@ cask "orca" do
   end
 
   # Why: electron-updater (src/main/updater.ts) handles in-place updates by
-  # writing a new Orca.app into /Applications. Marking the cask auto_updates
+  # writing a new Orcaly.app into /Applications. Marking the cask auto_updates
   # tells Homebrew not to compete with the in-app updater — `brew upgrade`
   # becomes a no-op unless the user passes --greedy, and brew's version
   # metadata stays aligned with whatever the app has swapped itself to.
@@ -25,14 +25,14 @@ cask "orca" do
   conflicts_with cask: "orca@rc"
   depends_on macos: :big_sur
 
-  app "Orca.app"
+  app "Orcaly.app"
 
   # Why: expose the bundled `orca` CLI on PATH at install time (Homebrew symlinks
   # this into its already-on-PATH bin dir). Without it, the CLI is only registered
   # by the in-app "Install CLI" action, which a headless host can never trigger —
   # so `orca serve` on a server would be unreachable from the shell. The shim
   # resolves the real app by walking symlinks, so the Homebrew symlink works.
-  binary "#{appdir}/Orca.app/Contents/Resources/bin/orca"
+  binary "#{appdir}/Orcaly.app/Contents/Resources/bin/orca"
 
   # Why: Orca writes user data under ~/.orca (worktrees, agent state) and
   # Electron's standard userData directories. Zap removes everything the app
@@ -40,10 +40,10 @@ cask "orca" do
   zap trash: [
     "~/.orca",
     "~/Library/Application Support/Orca",
-    "~/Library/Caches/com.stablyai.orca",
-    "~/Library/Caches/com.stablyai.orca.ShipIt",
-    "~/Library/HTTPStorages/com.stablyai.orca",
-    "~/Library/Preferences/com.stablyai.orca.plist",
-    "~/Library/Saved Application State/com.stablyai.orca.savedState",
+    "~/Library/Caches/com.seedotlee.orca",
+    "~/Library/Caches/com.seedotlee.orca.ShipIt",
+    "~/Library/HTTPStorages/com.seedotlee.orca",
+    "~/Library/Preferences/com.seedotlee.orca.plist",
+    "~/Library/Saved Application State/com.seedotlee.orca.savedState",
   ]
 end

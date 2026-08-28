@@ -2,8 +2,14 @@
 
 import { execFileSync } from 'node:child_process'
 import { appendFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
 import { verifyRequiredReleaseAssets } from './verify-release-required-assets.mjs'
+
+const { githubOwner, githubRepo } = createRequire(import.meta.url)(
+  '../../src/shared/distribution-identity.json'
+)
+const DEFAULT_RELEASE_REPO = `${githubOwner}/${githubRepo}`
 
 const API_VERSION = '2022-11-28'
 const RELEASE_CUT_AUTHOR = 'github-actions[bot]'
@@ -157,7 +163,7 @@ export function writeGithubOutputs({ published, skipped }, outputPath = process.
 
 async function main() {
   const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
-  const repo = process.env.GITHUB_REPOSITORY || 'stablyai/orca'
+  const repo = process.env.GITHUB_REPOSITORY || DEFAULT_RELEASE_REPO
   const result = await publishCompleteDraftReleases({ repo, token })
   writeGithubOutputs(result)
 }

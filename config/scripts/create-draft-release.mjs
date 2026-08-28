@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 
+import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
+
+const { githubOwner, githubRepo } = createRequire(import.meta.url)(
+  '../../src/shared/distribution-identity.json'
+)
+const DEFAULT_RELEASE_REPO = `${githubOwner}/${githubRepo}`
 
 const API_VERSION = '2022-11-28'
 const MAX_RELEASE_BODY_LENGTH = 120_000
@@ -180,7 +186,7 @@ export async function createDraftRelease({
 async function main() {
   const tag = process.argv[2]
   const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
-  const repo = process.env.GITHUB_REPOSITORY || 'stablyai/orca'
+  const repo = process.env.GITHUB_REPOSITORY || DEFAULT_RELEASE_REPO
   await createDraftRelease({ repo, tag, token })
 }
 

@@ -18,6 +18,6 @@
     nsExec::Exec 'taskkill /F /IM orca-terminal-daemon.exe'
     ; Give the OS a moment to release the image lock before removing the tree.
     Sleep 500
-    RMDir /r "$LOCALAPPDATA\Orca\daemon-host"
+    RMDir /r "$LOCALAPPDATA\${PRODUCT_NAME}\daemon-host"
   ${endIf}
 !macroend

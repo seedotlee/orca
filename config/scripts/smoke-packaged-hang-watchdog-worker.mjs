@@ -5,6 +5,9 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { Worker } from 'node:worker_threads'
+const { productName } = createRequire(import.meta.url)(
+  '../../src/shared/distribution-identity.json'
+)
 
 const INTERNAL_ENV = 'ORCA_PACKAGED_WATCHDOG_SMOKE_INTERNAL'
 const ASAR_ENV = 'ORCA_PACKAGED_WATCHDOG_SMOKE_ASAR'
@@ -24,7 +27,7 @@ function readAppDirArg(argv) {
     return explicit.slice('--app-dir='.length)
   }
   if (process.platform === 'darwin') {
-    return 'dist/mac-arm64/Orca.app'
+    return `dist/mac-arm64/${productName}.app`
   }
   if (process.platform === 'win32') {
     return 'dist/win-unpacked'

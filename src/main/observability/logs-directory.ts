@@ -6,6 +6,7 @@
 import { getAppEnvironment, hasAppEnvironment } from '../../shared/app-environment'
 import { homedir, platform } from 'node:os'
 import { join } from 'node:path'
+import { APP_PRODUCT_NAME } from '../../shared/distribution-identity'
 
 // Why the port and not electron's `app`: the daemon launch path reads this for --log-file,
 // and that path has to resolve under plain Node (orcad) as well as the desktop.
@@ -18,12 +19,12 @@ function getUserDataDir(): string {
   }
   const home = homedir()
   if (platform() === 'darwin') {
-    return join(home, 'Library', 'Application Support', 'Orca')
+    return join(home, 'Library', 'Application Support', APP_PRODUCT_NAME)
   }
   if (platform() === 'win32') {
-    return join(process.env.APPDATA ?? home, 'Orca')
+    return join(process.env.APPDATA ?? home, APP_PRODUCT_NAME)
   }
-  return join(home, '.config', 'Orca')
+  return join(home, '.config', APP_PRODUCT_NAME)
 }
 
 export function getLogsDirectory(): string {

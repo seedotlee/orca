@@ -1,4 +1,4 @@
-type RgbaColor = { r: number; g: number; b: number; a: number }
+export type RgbaColor = { r: number; g: number; b: number; a: number }
 
 const APP_SURFACE_COLORS: Record<'dark' | 'light', RgbaColor> = {
   dark: { r: 10, g: 10, b: 10, a: 1 },
@@ -37,6 +37,17 @@ export function resolveOpaqueTerminalBackground(
   return composited ? `rgb(${composited.r} ${composited.g} ${composited.b})` : null
 }
 
+/** WCAG contrast of a text color over the composited terminal background; null when either fails to parse. */
+export function resolveTerminalTextContrastRatio(
+  background: string | undefined,
+  foreground: string | undefined,
+  options: { backgroundOpacity?: number; appSurface?: 'dark' | 'light' } = {}
+): number | null {
+  const composited = compositeTerminalBackground(background, options)
+  const text = parseCssRgbColor(foreground)
+  return composited && text ? contrastRatio(text, composited) : null
+}
+
 function compositeTerminalBackground(
   background: string | undefined,
   options: { backgroundOpacity?: number; appSurface?: 'dark' | 'light' } = {}
@@ -53,7 +64,7 @@ function compositeTerminalBackground(
   return alpha < 1 ? compositeRgb(color, appSurface, alpha) : { ...color, a: 1 }
 }
 
-function parseCssRgbColor(color: string | undefined): RgbaColor | null {
+export function parseCssRgbColor(color: string | undefined): RgbaColor | null {
   const value = color?.trim().toLowerCase()
   if (!value) {
     return null

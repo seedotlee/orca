@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   DARK_BG_MIN_CONTRAST,
+  DIM_TEXT_CONTRAST_HEADROOM,
   LIGHT_BG_MIN_CONTRAST,
   resolveTerminalMinimumContrastRatio
 } from './terminal-contrast-correction'
@@ -39,6 +40,70 @@ describe('resolveTerminalMinimumContrastRatio', () => {
 
   it('treats an undefined/transparent background as dark', () => {
     expect(resolveTerminalMinimumContrastRatio(undefined, 'dark')).toBe(DARK_BG_MIN_CONTRAST)
+  })
+})
+
+// Dimmed palette text (ANSI 8: zsh-autosuggestions / fish ghost text, prompt hints) must stay visibly
+// dimmer than body text. xterm lifts every below-floor color to the floor, so on a low-contrast light
+// theme the floor lands beside the foreground and both collapse into one gray.
+describe('resolveTerminalMinimumContrastRatio foreground headroom', () => {
+  // Solarized Light (Warp/termio import): fg #586e75 is ~5.0:1, brightBlack #93a1a1 is ~2.5:1. At the
+  // 4.5 floor xterm darkens brightBlack to #5f6868 — indistinguishable from the foreground.
+  const SOLARIZED_LIGHT = { background: '#fdf6e3', foreground: '#586e75' }
+
+  it('keeps the light floor when the foreground has plenty of contrast', () => {
+    expect(resolveTerminalMinimumContrastRatio('#ffffff', 'light', '#000000')).toBe(
+      LIGHT_BG_MIN_CONTRAST
+    )
+    expect(resolveTerminalMinimumContrastRatio('#fbf1c7', 'dark', '#3c3836')).toBe(
+      LIGHT_BG_MIN_CONTRAST
+    )
+  })
+
+  it('lowers the light floor to leave headroom below a low-contrast foreground', () => {
+    const floor = resolveTerminalMinimumContrastRatio(
+      SOLARIZED_LIGHT.background,
+      'dark',
+      SOLARIZED_LIGHT.foreground
+    )
+    const fgContrast = contrastRatio(SOLARIZED_LIGHT.background, SOLARIZED_LIGHT.foreground)
+    expect(floor).toBeLessThan(LIGHT_BG_MIN_CONTRAST)
+    expect(floor).toBeCloseTo(fgContrast / DIM_TEXT_CONTRAST_HEADROOM, 5)
+  })
+
+  it('keeps the ghost-text slot of a low-contrast theme at its designed contrast', () => {
+    // Solarized Light ships brightBlack #93a1a1 at ~2.5:1; the floor must not lift it.
+    const floor = resolveTerminalMinimumContrastRatio(
+      SOLARIZED_LIGHT.background,
+      'dark',
+      SOLARIZED_LIGHT.foreground
+    )
+    expect(contrastRatio(SOLARIZED_LIGHT.background, '#93a1a1')).toBeGreaterThanOrEqual(
+      floor - 0.05
+    )
+  })
+
+  it('keeps the dark floor for a high-contrast dark theme', () => {
+    expect(resolveTerminalMinimumContrastRatio('#1e242a', 'dark', '#e6edf3')).toBe(
+      DARK_BG_MIN_CONTRAST
+    )
+  })
+
+  it('lowers the dark floor too when the dark theme foreground is low-contrast', () => {
+    // Solarized Dark: fg #839496 ~4.75:1, brightBlack #586e75 ~2.8:1 — must stay untouched.
+    const floor = resolveTerminalMinimumContrastRatio('#002b36', 'dark', '#839496')
+    expect(floor).toBeLessThan(DARK_BG_MIN_CONTRAST)
+    expect(contrastRatio('#002b36', '#586e75')).toBeGreaterThanOrEqual(floor)
+  })
+
+  it('bottoms out at 1 (correction off) for a pathological foreground', () => {
+    expect(resolveTerminalMinimumContrastRatio('#fdf6e3', 'light', '#f0ead8')).toBe(1)
+  })
+
+  it('falls back to the plain floor for an unparseable foreground', () => {
+    expect(resolveTerminalMinimumContrastRatio('#fdf6e3', 'light', 'not-a-color')).toBe(
+      LIGHT_BG_MIN_CONTRAST
+    )
   })
 })
 

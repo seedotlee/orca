@@ -111,6 +111,7 @@ type SettingsSetupGuideRowProps = {
   onSelect: () => void
 }
 
+/** Setup-guide row above the section list; mirrors `SetupGuideSidebarEntry` styling inside settings. */
 function SettingsSetupGuideNavRow({
   progress,
   setupActive,
@@ -148,6 +149,7 @@ function SettingsSetupGuideNavRow({
   )
 }
 
+/** Settings navigation column: search, general section groups, and one per-repo section. */
 export function SettingsSidebar({
   activeSectionId,
   settings,

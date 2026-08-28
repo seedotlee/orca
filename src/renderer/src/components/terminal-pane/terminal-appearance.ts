@@ -132,6 +132,7 @@ function composedTerminalThemesEqual(a: ITheme | undefined, b: ITheme): boolean 
   return extA.length === extB.length && extA.every((value, i) => value === extB[i])
 }
 
+/** Pushes the effective theme, fonts, and contrast settings to every live pane; value-gated so no-op re-applies skip xterm cache invalidation. */
 export function applyTerminalAppearance(
   manager: PaneManager,
   settings: GlobalSettings,

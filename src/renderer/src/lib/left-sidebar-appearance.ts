@@ -47,6 +47,7 @@ function applyAlpha(color: string, alpha: number | undefined): string {
   return hexToRgba(color, Math.min(1, Math.max(0, alpha)))
 }
 
+/** Derives every sidebar-scoped CSS variable from one background/foreground pair via `color-mix`. */
 function buildSurfaceVariables(args: {
   background: string
   foreground: string

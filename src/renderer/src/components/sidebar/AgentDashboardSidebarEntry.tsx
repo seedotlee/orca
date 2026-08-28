@@ -25,6 +25,7 @@ function dashboardBucketLabel(bucket: DashboardBucket): string {
   }
 }
 
+/** Inline per-bucket agent counts; hides empty buckets and idle unless `showIdle`. */
 function DashboardBucketCounts({
   counts,
   showIdle
@@ -58,6 +59,7 @@ function DashboardBucketCounts({
   )
 }
 
+/** Sidebar nav row that opens the agent dashboard as a drawer or popout per settings. */
 export default function AgentDashboardSidebarEntry(): React.JSX.Element {
   const dashboardBucketCounts = useAgentBucketCounts()
   const showIdle = useAppStore((s) => s.settings?.experimentalAgentDashboardShowIdle === true)

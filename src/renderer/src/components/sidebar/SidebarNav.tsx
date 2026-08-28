@@ -57,6 +57,7 @@ export function shouldShowSkillsButton(
 
 const AgentDashboardSidebarEntry = lazyWithRetry(() => import('./AgentDashboardSidebarEntry'))
 
+/** Top-of-sidebar navigation: search, setup guide, tasks, artifacts, skills, automations, dashboard, activity, mobile. */
 const SidebarNav = React.memo(function SidebarNav() {
   // Why: this memo boundary needs its own language subscription, while
   // translate() preserves Orca's pseudo-localization behavior.

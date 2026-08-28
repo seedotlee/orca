@@ -64,6 +64,7 @@ function compositeTerminalBackground(
   return alpha < 1 ? compositeRgb(color, appSurface, alpha) : { ...color, a: 1 }
 }
 
+/** Parses a named, `#hex[a]`, or `rgb[a]()` (comma or space syntax) color; null for anything else. */
 export function parseCssRgbColor(color: string | undefined): RgbaColor | null {
   const value = color?.trim().toLowerCase()
   if (!value) {

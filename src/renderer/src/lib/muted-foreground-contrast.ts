@@ -4,6 +4,7 @@ import { parseCssRgbColor, type RgbaColor } from './terminal-title-contrast'
 export const MUTED_FOREGROUND_MIX_PERCENT = 62
 export const MUTED_FOREGROUND_MIN_CONTRAST = 4.5
 
+/** WCAG 2.x relative luminance (sRGB linearized); alpha is ignored. */
 function relativeLuminance({ r, g, b }: RgbaColor): number {
   const linear = (channel: number): number => {
     const c = channel / 255
@@ -12,6 +13,7 @@ function relativeLuminance({ r, g, b }: RgbaColor): number {
   return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b)
 }
 
+/** WCAG contrast ratio in [1, 21]; order-independent. */
 function contrastRatio(a: RgbaColor, b: RgbaColor): number {
   const la = relativeLuminance(a)
   const lb = relativeLuminance(b)

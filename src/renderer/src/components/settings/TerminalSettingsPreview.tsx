@@ -49,6 +49,7 @@ function resolveAppMode(
   return settings.theme
 }
 
+/** Live xterm preview that mirrors `applyTerminalAppearance` so settings render exactly as real panes will. */
 export function TerminalSettingsPreview({
   title,
   description,

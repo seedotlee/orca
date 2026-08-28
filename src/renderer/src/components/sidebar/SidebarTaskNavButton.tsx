@@ -54,6 +54,7 @@ function TaskProviderShortcut({
   )
 }
 
+/** Tasks nav row that opens the task page; hidden when `showTasksButton` is off in settings. */
 export function SidebarTaskNavButton(): React.JSX.Element | null {
   const openTaskPage = useAppStore((s) => s.openTaskPage)
   const updateSettings = useAppStore((s) => s.updateSettings)

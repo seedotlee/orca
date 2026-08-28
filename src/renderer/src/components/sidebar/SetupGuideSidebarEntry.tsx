@@ -38,6 +38,7 @@ function isSetupGuideSidebarComplete(progress: FeatureWallSetupProgress): boolea
   return progress.coreDoneCount >= progress.coreTotal
 }
 
+/** Dismissible sidebar row with setup progress; hidden once setup completes or the user dismisses it. */
 export function SetupGuideSidebarEntry(): React.JSX.Element | null {
   const openModal = useAppStore((s) => s.openModal)
   const activeModal = useAppStore((s) => s.activeModal)

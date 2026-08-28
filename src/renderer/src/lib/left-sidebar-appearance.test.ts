@@ -2,6 +2,7 @@ import { tmpdir } from 'node:os'
 import { describe, expect, it } from 'vitest'
 import { getDefaultSettings } from '../../../shared/constants'
 import { resolveLeftSidebarStyleVariables } from './left-sidebar-appearance'
+import { resolveMutedForegroundMixPercent } from './muted-foreground-contrast'
 
 function settings(overrides = {}) {
   return {
@@ -37,6 +38,19 @@ describe('resolveLeftSidebarStyleVariables', () => {
     })
     expect(vars?.['--worktree-sidebar-accent']).toContain('#f0f4f8 9%')
     expect(vars?.['--sidebar-accent']).toBe(vars?.['--worktree-sidebar-accent'])
+  })
+
+  it('gates matched-terminal muted text on contrast so low-contrast themes stay legible (#16999)', () => {
+    const vars = resolveLeftSidebarStyleVariables(
+      settings({
+        leftSidebarAppearanceMode: 'match-terminal',
+        terminalColorOverrides: { background: '#fdf6e3', foreground: '#586e75' }
+      }),
+      false
+    )
+    const percent = resolveMutedForegroundMixPercent('#fdf6e3', '#586e75')
+    expect(percent).toBeGreaterThan(62)
+    expect(vars?.['--muted-foreground']).toBe(`color-mix(in srgb, #586e75 ${percent}%, #fdf6e3)`)
   })
 
   it('honors terminal background opacity for matched terminal surfaces', () => {

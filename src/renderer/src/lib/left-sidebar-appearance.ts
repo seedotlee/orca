@@ -5,6 +5,7 @@ import {
   normalizeLeftSidebarTintOpacity
 } from '../../../shared/left-sidebar-appearance'
 import { resolveEffectiveTerminalAppearance } from './terminal-theme'
+import { resolveMutedForegroundMixPercent } from './muted-foreground-contrast'
 
 type LeftSidebarAppearanceSettings = Pick<
   GlobalSettings,
@@ -82,7 +83,9 @@ function buildSurfaceVariables(args: {
     vars['--accent'] = `color-mix(in srgb, ${foreground} 9%, ${background})`
     vars['--accent-foreground'] = foreground
     vars['--muted'] = `color-mix(in srgb, ${foreground} 7%, ${background})`
-    vars['--muted-foreground'] = `color-mix(in srgb, ${foreground} 62%, ${background})`
+    // Contrast-gated (#16999): a fixed 62% vanishes on low-contrast themes such as Solarized.
+    const mutedPercent = resolveMutedForegroundMixPercent(background, foreground)
+    vars['--muted-foreground'] = `color-mix(in srgb, ${foreground} ${mutedPercent}%, ${background})`
     // Match the global --border (7%) so sidebar-scoped dividers aren't brighter (#5906).
     vars['--border'] = `color-mix(in srgb, ${foreground} 7%, ${background})`
   }

@@ -48,6 +48,7 @@ export function resolveTerminalTextContrastRatio(
   return composited && text ? contrastRatio(text, composited) : null
 }
 
+/** Terminal background as the opaque color actually seen: alpha × opacity blended over the app surface. */
 function compositeTerminalBackground(
   background: string | undefined,
   options: { backgroundOpacity?: number; appSurface?: 'dark' | 'light' } = {}

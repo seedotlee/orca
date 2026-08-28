@@ -4,6 +4,7 @@ import { getDefaultSettings } from '../../../shared/constants'
 import { resolveLeftSidebarStyleVariables } from './left-sidebar-appearance'
 import { resolveMutedForegroundMixPercent } from './muted-foreground-contrast'
 
+/** Default global settings with per-test overrides. */
 function settings(overrides = {}) {
   return {
     ...getDefaultSettings(tmpdir()),

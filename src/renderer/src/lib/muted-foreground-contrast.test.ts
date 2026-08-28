@@ -5,19 +5,24 @@ import {
   resolveMutedForegroundMixPercent
 } from './muted-foreground-contrast'
 
-// WCAG contrast of `color-mix(in srgb, fg P%, bg)` over bg, mirroring the browser's sRGB mix.
+/** `#rrggbb` → [r, g, b] in 0–255. */
+function hexChannels(hex: string): number[] {
+  return [1, 3, 5].map((index) => Number.parseInt(hex.slice(index, index + 2), 16))
+}
+
+/** WCAG 2.x relative luminance of an [r, g, b] triple; independent of the implementation under test. */
+function luminance(rgb: number[]): number {
+  const [r, g, b] = rgb.map((channel) => {
+    const c = channel / 255
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+  })
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+/** WCAG contrast of `color-mix(in srgb, fg P%, bg)` over bg, mirroring the browser's sRGB mix. */
 function mixedContrast(background: string, foreground: string, percent: number): number {
-  const channels = (hex: string): number[] =>
-    [1, 3, 5].map((index) => Number.parseInt(hex.slice(index, index + 2), 16))
-  const luminance = (rgb: number[]): number => {
-    const [r, g, b] = rgb.map((channel) => {
-      const c = channel / 255
-      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
-    })
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b
-  }
-  const bg = channels(background)
-  const fg = channels(foreground)
+  const bg = hexChannels(background)
+  const fg = hexChannels(foreground)
   const mixed = fg.map(
     (channel, index) => channel * (percent / 100) + bg[index] * (1 - percent / 100)
   )

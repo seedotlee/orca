@@ -179,6 +179,7 @@ export function SettingsSidebar({
         ? 'bg-worktree-sidebar-accent font-medium text-worktree-sidebar-accent-foreground ring-1 ring-worktree-sidebar-ring/25'
         : 'text-muted-foreground hover:bg-worktree-sidebar-accent/60 hover:text-worktree-sidebar-foreground'
     )
+  /** Localized pill text for a repo section's skill-install status. */
   const installStatusLabel = (status: VisibleInstallStatus): string => {
     switch (status) {
       case 'update-available':

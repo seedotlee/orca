@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { NodeViewContent, NodeViewWrapper } from '@tiptap/react'
 import type { NodeViewProps } from '@tiptap/react'
 import { Copy, Check } from 'lucide-react'
-import { useAppStore } from '@/store'
+import { useEditorSurfaceAppearance } from './use-editor-surface-appearance'
 import MermaidBlock from './MermaidBlock'
 import { translate } from '@/i18n/i18n'
 
@@ -171,10 +171,7 @@ export function RichMarkdownCodeBlock({
   // Why: clipboard IPC can resolve after the node view unmounts; avoid
   // starting a reset timer that will outlive the component.
   const isMountedRef = useRef(false)
-  const settings = useAppStore((s) => s.settings)
-  const isDark =
-    settings?.theme === 'dark' ||
-    (settings?.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  const { isDark } = useEditorSurfaceAppearance()
 
   const isMermaid = language === 'mermaid'
 

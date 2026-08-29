@@ -1,4 +1,5 @@
 import type { GlobalSettings } from '../../../shared/global-settings-types'
+import { buildSyntaxTokenVariables, resolveTerminalEditorPalette } from './terminal-editor-palette'
 import {
   buildSidebarTokenVariables,
   buildSurfaceTextTokenVariables,
@@ -13,7 +14,7 @@ export type WorkspaceChromeAppearanceSettings = TerminalSurfaceSettings &
 export type WorkspaceChromeStyleVariables = SurfaceStyleVariables
 
 /** Document-root CSS variables that make every app chrome surface (tab strip, status bar, side
- *  panels, full-page views, popovers) follow the terminal theme; undefined keeps the app theme.
+ *  panels, full-page views, popovers, editor panes) follow the terminal theme; undefined keeps the app theme.
  *  Left-sidebar appearance modes still win because they scope their own vars below the root. */
 export function resolveWorkspaceChromeStyleVariables(
   settings: WorkspaceChromeAppearanceSettings | null | undefined,
@@ -23,13 +24,17 @@ export function resolveWorkspaceChromeStyleVariables(
     return undefined
   }
   const colors = resolveTerminalSurfaceColors(settings, systemPrefersDark)
+  const editorPalette = resolveTerminalEditorPalette(settings, systemPrefersDark)
   return {
     // Status bar and titlebars paint this hook ahead of --card.
     '--bg-titlebar': colors.background,
     ...buildSurfaceTextTokenVariables(colors),
     ...buildSidebarTokenVariables(colors),
     // Why: tab surfaces are bg-card; pin it to the terminal background so they don't read as a lighter strip.
-    '--card': colors.background
+    '--card': colors.background,
+    // Markdown preview, rich editor, notebooks, and viewers paint --editor-surface; Monaco follows via its own theme.
+    '--editor-surface': colors.background,
+    ...(editorPalette ? buildSyntaxTokenVariables(editorPalette) : {})
   }
 }
 

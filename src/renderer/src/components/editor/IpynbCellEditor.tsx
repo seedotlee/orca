@@ -1,12 +1,11 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import { memo, useCallback, useLayoutEffect, useMemo, useRef } from 'react'
 import Editor, { type OnMount } from '@monaco-editor/react'
 import Markdown from 'react-markdown'
 import rehypeRaw from 'rehype-raw'
 import rehypeSanitize from 'rehype-sanitize'
 import remarkGfm from 'remark-gfm'
-import { monaco } from '@/lib/monaco-setup'
 import { computeEditorFontSize, resolveEditorFontFamily } from '@/lib/editor-font-zoom'
-import { resolveDocumentTheme } from '@/lib/document-theme'
+import { useMonacoEditorTheme } from './use-monaco-editor-theme'
 import { useAppStore } from '@/store'
 import { installEditorSaveShortcut, installMonacoEditorFindShortcut } from './editor-shortcuts'
 import { getIpynbCodeCellEditorHeight, getIpynbCodeCellPreviewLines } from './ipynb-code-cell-lines'
@@ -66,7 +65,7 @@ function IpynbCodeCellEditor({
   }, [onDeactivate, onSaveRequest])
   const fontSize = computeEditorFontSize(settings?.terminalFontSize ?? 13, editorFontZoomLevel)
   const editorHeight = getIpynbCodeCellEditorHeight(source, fontSize)
-  const isDark = resolveDocumentTheme(settings?.theme ?? 'system')
+  const { theme: monacoTheme } = useMonacoEditorTheme()
   const lines = useMemo(() => getIpynbCodeCellPreviewLines(source), [source])
   const handleMount: OnMount = useCallback((editorInstance, monacoInstance) => {
     editorInstance.focus()
@@ -89,10 +88,6 @@ function IpynbCodeCellEditor({
       onDeactivateRef.current()
     })
   }, [])
-
-  useEffect(() => {
-    monaco.editor.setTheme(isDark ? 'vs-dark' : 'vs')
-  }, [isDark])
 
   if (!active) {
     return (
@@ -124,7 +119,7 @@ function IpynbCodeCellEditor({
         height={editorHeight}
         defaultLanguage={cell.language}
         language={cell.language}
-        theme={isDark ? 'vs-dark' : 'vs'}
+        theme={monacoTheme}
         value={source}
         onMount={handleMount}
         onChange={(value) => onChange(value ?? '')}

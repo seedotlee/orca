@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef, useLayoutEffect, useMe
 import { elementScroll, useVirtualizer } from '@tanstack/react-virtual'
 import type { editor as monacoEditor } from 'monaco-editor'
 import { useAppStore } from '@/store'
+import { useMonacoEditorTheme } from './use-monaco-editor-theme'
 import {
   useVirtualizedScrollAnchor,
   VIRTUALIZED_SCROLL_ANCHOR_RECORD_EVENT,
@@ -245,9 +246,7 @@ export default function CombinedDiffViewer({
   )
   const activeGroupId = useAppStore((s) => s.activeGroupIdByWorktree[file.worktreeId])
   const canOpenWorkspaceFileBrowserForPath = useWorkspaceFileBrowserActionPredicate(file.worktreeId)
-  const isDark =
-    settings?.theme === 'dark' ||
-    (settings?.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  const { theme: monacoTheme } = useMonacoEditorTheme()
 
   const diffCommentCount = diffCommentsForWorktree.length
   const diffCommentsPrompt = React.useMemo(
@@ -2053,7 +2052,7 @@ export default function CombinedDiffViewer({
                         index={virtualItem.index}
                         isBranchMode={isBranchMode}
                         sideBySide={sideBySide}
-                        isDark={isDark}
+                        monacoTheme={monacoTheme}
                         settings={settings}
                         sectionHeight={sectionHeights[virtualItem.index]}
                         worktreeId={file.worktreeId}

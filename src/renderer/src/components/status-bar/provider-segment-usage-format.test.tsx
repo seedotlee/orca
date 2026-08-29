@@ -58,6 +58,16 @@ describe('ProviderSegment usage format template', () => {
     expect(markup).toMatch(/<span class="[^"]*whitespace-pre[^"]*">Claude \| 5h/)
   })
 
+  it('honors the template in compact usage mode instead of the tightest-window label', async () => {
+    statusBarUsageFormat = { template: '{provider} {5h}/{7d}' }
+    const { ProviderSegment } = await import('./StatusBar')
+    const markup = renderToStaticMarkup(
+      <ProviderSegment p={claudeLimits()} compact={false} display="used" mode="compact" />
+    )
+    expect(markup).toContain('Claude 14%/20%')
+    expect(markup).not.toContain('37% used Fable')
+  })
+
   it('falls back to the built-in rendering when the template is empty', async () => {
     statusBarUsageFormat = { template: '   ' }
     const { ProviderSegment } = await import('./StatusBar')

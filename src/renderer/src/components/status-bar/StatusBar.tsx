@@ -1280,6 +1280,9 @@ export function ProviderSegment({
 }): React.JSX.Element {
   const provider = p?.provider ?? 'claude'
   const statusLabel = p ? getProviderUsageStatusLabel(p) : ''
+  const usageFormat = useAppStore((s) => s.statusBarUsageFormat)
+  // Why: a user template replaces the built-in text in both usage modes, so compact mode can't silently drop it.
+  const hasTemplate = resolveStatusBarUsageTemplate(usageFormat, provider) !== null
 
   // Idle / initial load
   if (!p || p.status === 'idle') {
@@ -1329,9 +1332,9 @@ export function ProviderSegment({
   return (
     <span className="inline-flex items-center gap-1.5">
       <ProviderIcon provider={provider} />
-      {mode === 'verbose' ? (
+      {mode === 'verbose' || hasTemplate ? (
         <>
-          {tightest && !compact ? (
+          {mode === 'verbose' && tightest && !compact ? (
             <MiniBar usedPct={clampUsedPercent(tightest.window.usedPercent)} display={display} />
           ) : null}
           <VerboseProviderUsage p={p} display={display} />

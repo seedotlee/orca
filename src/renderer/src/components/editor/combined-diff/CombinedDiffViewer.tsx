@@ -38,6 +38,7 @@ import { useCombinedDiffNotesActions } from './review-controls/use-combined-diff
 import { useCombinedDiffSectionActions } from './review-controls/use-combined-diff-section-actions'
 import { useCombinedDiffViewPreferences } from './review-controls/use-combined-diff-view-preferences'
 
+/** All changed files of a worktree in one scrolling diff with a collapsible file tree. */
 export default function CombinedDiffViewer({
   file,
   viewStateKey

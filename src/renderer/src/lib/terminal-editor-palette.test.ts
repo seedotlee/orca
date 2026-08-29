@@ -41,6 +41,7 @@ const SOLARIZED_LIGHT = {
   }
 }
 
+/** Settings fixture in match-terminal mode with a light custom terminal theme. */
 function matchTerminalSettings(overrides = {}) {
   return {
     ...getDefaultSettings(tmpdir()),

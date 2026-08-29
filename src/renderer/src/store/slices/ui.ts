@@ -1081,6 +1081,7 @@ export type UISlice = {
   setBrowserKagiSessionLink: (link: string | null) => void
 }
 
+/** Renderer UI state slice: layout, appearance, status bar and persisted UI preferences. */
 export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get) => ({
   sidebarOpen: true,
   sidebarWidth: 280,
@@ -2553,6 +2554,7 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
   editorFontZoomLevel: 0,
   setEditorFontZoomLevel: (level) => set({ editorFontZoomLevel: level }),
 
+  /** Applies a persisted UI snapshot, normalizing every field against current repos and defaults. */
   hydratePersistedUI: (ui, source = 'sync') =>
     set((s) => {
       const manualRepoOrder = normalizeManualRepoOrder(ui.manualRepoOrder)

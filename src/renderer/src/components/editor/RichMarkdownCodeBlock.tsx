@@ -13,6 +13,7 @@ import {
   isKnownCodeBlockLanguage
 } from './rich-markdown-code-block-languages'
 
+/** Tiptap node view for a fenced code block with a language picker and copy action. */
 export function RichMarkdownCodeBlock({
   node,
   updateAttributes

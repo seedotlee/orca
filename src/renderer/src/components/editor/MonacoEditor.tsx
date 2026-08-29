@@ -46,6 +46,7 @@ type MonacoEditorProps = {
   autoHeight?: boolean
 }
 
+/** Main Monaco file editor: wires models, view state, find, autosave and the surface theme. */
 export default function MonacoEditor({
   fileId,
   filePath,

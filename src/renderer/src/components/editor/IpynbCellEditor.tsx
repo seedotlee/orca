@@ -38,6 +38,7 @@ export function IpynbEditableTextCell({
   )
 }
 
+/** Monaco-backed editor for one notebook code cell; mounts only while the cell is active. */
 function IpynbCodeCellEditor({
   cell,
   source,

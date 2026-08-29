@@ -33,6 +33,7 @@ import { buildInlineReviewComments } from './inline-comments'
 import { usePRFileSectionHeights } from './section-heights'
 import { usePRFileActiveSection } from './active-section'
 
+/** Combined diff of a pull request’s files with file tree, section heights and active-section tracking. */
 export function PRFilesCombinedDiffViewer({
   files,
   comments,

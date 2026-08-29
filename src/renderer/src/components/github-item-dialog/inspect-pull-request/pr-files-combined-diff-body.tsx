@@ -12,6 +12,7 @@ import type { GitBranchChangeEntry } from '../../../../../shared/git-diff-compar
 import type { DiffSectionItemProps } from '@/components/editor/diff-section-item-props'
 import { PRFilesCombinedDiffToolbar } from './pr-files-combined-diff-toolbar'
 
+/** Toolbar plus combined diff sections for a pull request’s files inside the inspect dialog. */
 export function PRFilesCombinedDiffBody({
   files,
   repoPath,

@@ -94,6 +94,7 @@ function buildSurfaceVariables(args: {
   return vars
 }
 
+/** Match-terminal mode: sidebar variables derived from the active terminal theme. */
 function resolveTerminalSurfaceVariables(
   settings: LeftSidebarAppearanceSettings,
   systemPrefersDark: boolean

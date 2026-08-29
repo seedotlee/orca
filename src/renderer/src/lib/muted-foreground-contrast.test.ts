@@ -7,25 +7,34 @@ import {
 
 /** `#rrggbb` → [r, g, b] in 0–255. */
 function hexChannels(hex: string): number[] {
-  return [1, 3, 5].map((index) => Number.parseInt(hex.slice(index, index + 2), 16))
+  return [
+    Number.parseInt(hex.slice(1, 3), 16),
+    Number.parseInt(hex.slice(3, 5), 16),
+    Number.parseInt(hex.slice(5, 7), 16)
+  ]
 }
 
-/** WCAG 2.x relative luminance of an [r, g, b] triple; independent of the implementation under test. */
-function luminance(rgb: number[]): number {
-  const [r, g, b] = rgb.map((channel) => {
-    const c = channel / 255
-    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
-  })
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+/** sRGB 0–255 channel → linear-light value per WCAG 2.x; independent of the implementation under test. */
+function linearize(channel: number): number {
+  const c = channel / 255
+  return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+}
+
+/** WCAG 2.x relative luminance of an [r, g, b] triple. */
+function luminance([r, g, b]: number[]): number {
+  return 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b)
 }
 
 /** WCAG contrast of `color-mix(in srgb, fg P%, bg)` over bg, mirroring the browser's sRGB mix. */
 function mixedContrast(background: string, foreground: string, percent: number): number {
   const bg = hexChannels(background)
   const fg = hexChannels(foreground)
-  const mixed = fg.map(
-    (channel, index) => channel * (percent / 100) + bg[index] * (1 - percent / 100)
-  )
+  const weight = percent / 100
+  const mixed = [
+    fg[0] * weight + bg[0] * (1 - weight),
+    fg[1] * weight + bg[1] * (1 - weight),
+    fg[2] * weight + bg[2] * (1 - weight)
+  ]
   const lb = luminance(bg)
   const lm = luminance(mixed)
   return (Math.max(lb, lm) + 0.05) / (Math.min(lb, lm) + 0.05)

@@ -8,21 +8,26 @@ import {
 import { TERMINAL_THEME_CATALOG } from './terminal-themes'
 import { resolveTerminalTextContrastRatio } from './terminal-title-contrast'
 
-// WCAG relative-luminance contrast ratio, matching xterm's minimumContrastRatio gate.
+/** sRGB 0–255 channel → linear-light value per WCAG 2.x. */
+function toLinear(channel: number): number {
+  const c = channel / 255
+  return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+}
+
+/** WCAG 2.x relative luminance of a `#rrggbb` color. */
+function luminance(hex: string): number {
+  const n = Number.parseInt(hex.replace('#', ''), 16)
+  return (
+    0.2126 * toLinear((n >> 16) & 0xff) +
+    0.7152 * toLinear((n >> 8) & 0xff) +
+    0.0722 * toLinear(n & 0xff)
+  )
+}
+
+/** WCAG relative-luminance contrast ratio, matching xterm's minimumContrastRatio gate. */
 function contrastRatio(a: string, b: string): number {
-  const lum = (hex: string): number => {
-    const n = Number.parseInt(hex.replace('#', ''), 16)
-    const toLinear = (channel: number): number => {
-      const c = channel / 255
-      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
-    }
-    const r = toLinear((n >> 16) & 0xff)
-    const g = toLinear((n >> 8) & 0xff)
-    const bl = toLinear(n & 0xff)
-    return 0.2126 * r + 0.7152 * g + 0.0722 * bl
-  }
-  const la = lum(a)
-  const lb = lum(b)
+  const la = luminance(a)
+  const lb = luminance(b)
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05)
 }
 

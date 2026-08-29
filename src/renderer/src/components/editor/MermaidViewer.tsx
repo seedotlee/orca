@@ -8,10 +8,10 @@ type MermaidViewerProps = {
   filePath: string
 }
 
-// Why: MermaidViewer is the full-file counterpart to MermaidBlock (which
-// renders fenced mermaid blocks inside markdown). When a user opens a .mmd
-// or .mermaid file in diagram mode, the entire file content is the diagram
-// source — no markdown wrapper, no frontmatter, just mermaid syntax.
+/**
+ * Full-file Mermaid diagram view, the counterpart to MermaidBlock (fenced blocks inside markdown).
+ * Why: a .mmd / .mermaid file in diagram mode is pure diagram source — no markdown wrapper, no frontmatter.
+ */
 export default function MermaidViewer({
   content,
   filePath

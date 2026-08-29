@@ -1267,6 +1267,7 @@ function VerboseProviderUsage({
   )
 }
 
+/** Status-bar usage readout for one provider; a user template overrides the built-in text in both usage modes. */
 export function ProviderSegment({
   p,
   compact,

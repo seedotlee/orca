@@ -38,6 +38,7 @@ type MonacoCodeExcerptProps = {
   language: string
 }
 
+/** Read-only Monaco snippet showing a few lines of a file with a highlighted range. */
 export default function MonacoCodeExcerpt({
   lines,
   firstLineNumber,

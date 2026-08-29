@@ -40,6 +40,7 @@ export const TERMINAL_MONACO_THEME_NAME = 'orca-terminal'
 const FALLBACK_BACKGROUND = '#000000'
 const FALLBACK_FOREGROUND = '#fafafa'
 
+/** One 0–255 channel as two lowercase hex digits, clamped. */
 function channelToHex(channel: number): string {
   return Math.round(Math.min(255, Math.max(0, channel)))
     .toString(16)
@@ -64,10 +65,12 @@ export function mixHexColors(foreground: string, background: string, percent: nu
     return foreground
   }
   const weight = Math.min(1, Math.max(0, percent / 100))
+  /** Weighted blend of one channel. */
   const mix = (a: number, b: number): number => a * weight + b * (1 - weight)
   return `#${channelToHex(mix(fg.r, bg.r))}${channelToHex(mix(fg.g, bg.g))}${channelToHex(mix(fg.b, bg.b))}`
 }
 
+/** First candidate that parses as a color, as hex; otherwise the fallback. */
 function pickColor(candidates: (string | undefined)[], fallback: string): string {
   for (const candidate of candidates) {
     const hex = toHexColor(candidate)
@@ -97,6 +100,7 @@ export function resolveTerminalEditorPalette(
     backgroundOpacity: settings.terminalBackgroundOpacity ?? undefined,
     appSurface: appearance.mode
   })
+  /** ANSI slot color, falling back to the foreground when the theme lacks it. */
   const ansi = (key: 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan'): string =>
     pickColor([theme[key]], foreground)
   const commentPercent = resolveMutedForegroundMixPercent(background, foreground, {
@@ -135,6 +139,7 @@ export function buildSyntaxTokenVariables(palette: TerminalEditorPalette): Surfa
   return variables
 }
 
+/** `#rrggbb` with the given 0–1 alpha appended as `aa`. */
 function alphaHex(color: string, alpha: number): string {
   return `${color.slice(0, 7)}${channelToHex(alpha * 255)}`
 }
@@ -144,7 +149,9 @@ export function buildMonacoThemeData(
   palette: TerminalEditorPalette
 ): monacoEditor.IStandaloneThemeData {
   const { background, foreground, syntax } = palette
+  /** Foreground mixed into the background at the given percent. */
   const mix = (percent: number): string => mixHexColors(foreground, background, percent)
+  /** Monaco token rule; Monaco wants the color without the leading `#`. */
   const rule = (token: string, color: string, fontStyle?: string) => ({
     token,
     foreground: color.slice(1, 7),

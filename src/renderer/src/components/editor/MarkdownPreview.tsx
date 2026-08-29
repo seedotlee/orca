@@ -510,6 +510,7 @@ export function getMarkdownPreviewSourceRelativePath(
   return relativePathInsideRoot(sourceWorktreePath, filePath)
 }
 
+/** Rendered markdown view with Mermaid, task-list, link and image handling relative to the source file. */
 export default function MarkdownPreview({
   content,
   filePath,

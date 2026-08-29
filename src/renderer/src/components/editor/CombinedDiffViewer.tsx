@@ -218,6 +218,7 @@ function getInitialCombinedDiffFileTreeCollapsed(
   return combinedDiffFileTreeCollapsedPreference ?? combinedDiffFileTreeVisibleByDefault !== true
 }
 
+/** All changed files of a worktree in one scrolling diff with a collapsible file tree. */
 export default function CombinedDiffViewer({
   file,
   viewStateKey

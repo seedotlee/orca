@@ -77,6 +77,7 @@ export function PRFilesCombinedDiffViewer(
   )
 }
 
+/** Scrollable list of per-file diff sections for the inspected pull request. */
 function PRFilesCombinedDiffSections({
   files,
   comments,

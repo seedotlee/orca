@@ -45,6 +45,7 @@ type DiffSectionBodyProps = {
   onMount: DiffOnMount
 }
 
+/** Body of one combined-diff section: Monaco diff, image compare, or placeholder for unloaded content. */
 export function DiffSectionBody({
   section,
   index,

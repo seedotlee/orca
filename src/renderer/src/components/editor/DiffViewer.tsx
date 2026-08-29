@@ -29,6 +29,7 @@ import { useDiffEditorRegistration } from './diff-navigation-context'
 import { preserveDiffViewStateAcrossModelSwaps } from './diff-model-swap-view-state'
 import { monacoFindOptions } from './monaco-find-options'
 
+/** Monaco diff editor for a single file, keeping view state across model swaps. */
 export default function DiffViewer({
   modelKey,
   originalModelKey,

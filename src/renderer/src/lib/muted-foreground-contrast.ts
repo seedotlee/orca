@@ -1,8 +1,4 @@
-import {
-  compositeTerminalBackground,
-  parseCssRgbColor,
-  type RgbaColor
-} from './terminal-title-contrast'
+import { APP_SURFACE_COLORS, parseCssRgbColor, type RgbaColor } from './terminal-title-contrast'
 
 /** Global --muted-foreground ratio; the light default (#737373 on #fafafa) sits right at 4.5:1. */
 export const MUTED_FOREGROUND_MIX_PERCENT = 62
@@ -26,13 +22,23 @@ function contrastRatio(a: RgbaColor, b: RgbaColor): number {
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05)
 }
 
-/** `color-mix(in srgb, fg P%, bg)` as the browser computes it (gamma-space channel interpolation). */
-function mixSrgb(foreground: RgbaColor, background: RgbaColor, percent: number): RgbaColor {
+/** What `color-mix(in srgb, fg P%, bg)` text looks like on `surface`: CSS Color 4 mixes premultiplied
+ *  (so a translucent bg contributes `bg.a` of its weight), and the browser then composites the
+ *  still-translucent result over the surface the text sits on. */
+function renderMixedText(
+  foreground: RgbaColor,
+  background: RgbaColor,
+  surface: RgbaColor,
+  percent: number
+): RgbaColor {
   const weight = percent / 100
+  const fgWeight = weight * foreground.a
+  const bgWeight = (1 - weight) * background.a
+  const alpha = fgWeight + bgWeight
   return {
-    r: foreground.r * weight + background.r * (1 - weight),
-    g: foreground.g * weight + background.g * (1 - weight),
-    b: foreground.b * weight + background.b * (1 - weight),
+    r: fgWeight * foreground.r + bgWeight * background.r + (1 - alpha) * surface.r,
+    g: fgWeight * foreground.g + bgWeight * background.g + (1 - alpha) * surface.g,
+    b: fgWeight * foreground.b + bgWeight * background.b + (1 - alpha) * surface.b,
     a: 1
   }
 }
@@ -45,15 +51,27 @@ export function resolveMutedForegroundMixPercent(
   foreground: string,
   options: { appSurface?: 'dark' | 'light' } = {}
 ): number {
-  // Why: a translucent background renders over the app surface, and `color-mix(fg P%, rgba-bg)`
-  // composited over that surface equals `mixSrgb(fg, composited-bg, P)` — so gate on the composited color.
-  const bg = compositeTerminalBackground(background, { appSurface: options.appSurface })
+  // Why: the text sits on the sidebar as rendered — the (possibly translucent) background over the
+  // app surface — while its own transparent part still shows the raw background layer; rate the
+  // pixel the browser produces, not the opaque mix.
+  const bg = parseCssRgbColor(background)
   const fg = parseCssRgbColor(foreground)
   if (!bg || !fg) {
     return MUTED_FOREGROUND_MIX_PERCENT
   }
+  // Unrounded on purpose: the gate sits on a 4.5 boundary, and 8-bit rounding here can flip it.
+  const app = APP_SURFACE_COLORS[options.appSurface ?? 'dark']
+  const surface: RgbaColor = {
+    r: bg.r * bg.a + app.r * (1 - bg.a),
+    g: bg.g * bg.a + app.g * (1 - bg.a),
+    b: bg.b * bg.a + app.b * (1 - bg.a),
+    a: 1
+  }
   for (let percent = MUTED_FOREGROUND_MIX_PERCENT; percent < 100; percent += 1) {
-    if (contrastRatio(mixSrgb(fg, bg, percent), bg) >= MUTED_FOREGROUND_MIN_CONTRAST) {
+    if (
+      contrastRatio(renderMixedText(fg, bg, surface, percent), surface) >=
+      MUTED_FOREGROUND_MIN_CONTRAST
+    ) {
       return percent
     }
   }

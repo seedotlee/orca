@@ -1,6 +1,7 @@
 export type RgbaColor = { r: number; g: number; b: number; a: number }
 
-const APP_SURFACE_COLORS: Record<'dark' | 'light', RgbaColor> = {
+/** Opaque stand-ins for the app window behind translucent terminal surfaces. */
+export const APP_SURFACE_COLORS: Record<'dark' | 'light', RgbaColor> = {
   dark: { r: 10, g: 10, b: 10, a: 1 },
   light: { r: 255, g: 255, b: 255, a: 1 }
 }

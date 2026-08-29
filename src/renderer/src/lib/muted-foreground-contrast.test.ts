@@ -25,6 +25,11 @@ function luminance([r, g, b]: number[]): number {
   return 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b)
 }
 
+/** WCAG contrast ratio from two relative luminances. */
+function contrastFromLuminance(a: number, b: number): number {
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)
+}
+
 /** WCAG contrast of `color-mix(in srgb, fg P%, bg)` over bg, mirroring the browser's sRGB mix. */
 function mixedContrast(background: string, foreground: string, percent: number): number {
   const bg = hexChannels(background)
@@ -35,9 +40,35 @@ function mixedContrast(background: string, foreground: string, percent: number):
     fg[1] * weight + bg[1] * (1 - weight),
     fg[2] * weight + bg[2] * (1 - weight)
   ]
-  const lb = luminance(bg)
-  const lm = luminance(mixed)
-  return (Math.max(lb, lm) + 0.05) / (Math.min(lb, lm) + 0.05)
+  return contrastFromLuminance(luminance(bg), luminance(mixed))
+}
+
+/** Contrast the browser renders for muted text on a translucent sidebar: the sidebar is `bg` at
+ *  `bgAlpha` over `surface`; the text is the premultiplied `color-mix(fg P%, bg)` composited over
+ *  that sidebar (CSS Color 4 §12.3). Written independently of the implementation under test. */
+function renderedContrast(
+  background: string,
+  bgAlpha: number,
+  foreground: string,
+  surface: string,
+  percent: number
+): number {
+  const bg = hexChannels(background)
+  const fg = hexChannels(foreground)
+  const app = hexChannels(surface)
+  const sidebar = [
+    bg[0] * bgAlpha + app[0] * (1 - bgAlpha),
+    bg[1] * bgAlpha + app[1] * (1 - bgAlpha),
+    bg[2] * bgAlpha + app[2] * (1 - bgAlpha)
+  ]
+  const weight = percent / 100
+  const textAlpha = weight + (1 - weight) * bgAlpha
+  const text = [
+    weight * fg[0] + (1 - weight) * bgAlpha * bg[0] + (1 - textAlpha) * sidebar[0],
+    weight * fg[1] + (1 - weight) * bgAlpha * bg[1] + (1 - textAlpha) * sidebar[1],
+    weight * fg[2] + (1 - weight) * bgAlpha * bg[2] + (1 - textAlpha) * sidebar[2]
+  ]
+  return contrastFromLuminance(luminance(sidebar), luminance(text))
 }
 
 describe('resolveMutedForegroundMixPercent', () => {
@@ -81,7 +112,7 @@ describe('resolveMutedForegroundMixPercent', () => {
     )
   })
 
-  it('composites a translucent background over the app surface before gating', () => {
+  it('gates a translucent background on the pixel the browser renders, per app surface', () => {
     const translucent = 'rgba(253, 246, 227, 0.5)'
     // 50% Solarized Light over the light surface (#ffffff) / the dark surface (#0a0a0a).
     const overLight = resolveMutedForegroundMixPercent(translucent, '#586e75', {
@@ -90,10 +121,41 @@ describe('resolveMutedForegroundMixPercent', () => {
     const overDark = resolveMutedForegroundMixPercent(translucent, '#586e75', {
       appSurface: 'dark'
     })
-    expect(overLight).toBe(resolveMutedForegroundMixPercent('#fefbf1', '#586e75'))
-    expect(overDark).toBe(resolveMutedForegroundMixPercent('#848077', '#586e75'))
-    // The dark surface pulls the composited background toward the foreground, so it needs far more mix.
-    expect(overDark).toBeGreaterThan(overLight)
+    expect(
+      renderedContrast('#fdf6e3', 0.5, '#586e75', '#ffffff', overLight)
+    ).toBeGreaterThanOrEqual(MUTED_FOREGROUND_MIN_CONTRAST)
+    expect(renderedContrast('#fdf6e3', 0.5, '#586e75', '#ffffff', overLight - 1)).toBeLessThan(
+      MUTED_FOREGROUND_MIN_CONTRAST
+    )
+    // Over the dark surface the sidebar turns mid-gray (~#848077), which #586e75 cannot clear even
+    // undiluted (~1.4:1), so the gate falls back to the foreground itself.
+    expect(overDark).toBe(100)
+    expect(renderedContrast('#fdf6e3', 0.5, '#586e75', '#0a0a0a', 100)).toBeLessThan(
+      MUTED_FOREGROUND_MIN_CONTRAST
+    )
+  })
+
+  it('does not stop short because the text still shows the raw background layer through it', () => {
+    // Solarized Dark at 50% on the dark surface: an opaque mix against the composited sidebar
+    // would pass at a lower percent whose rendered pixel is still below the floor.
+    const percent = resolveMutedForegroundMixPercent('rgba(0, 43, 54, 0.5)', '#839496', {
+      appSurface: 'dark'
+    })
+    expect(percent).toBeLessThan(100)
+    expect(renderedContrast('#002b36', 0.5, '#839496', '#0a0a0a', percent)).toBeGreaterThanOrEqual(
+      MUTED_FOREGROUND_MIN_CONTRAST
+    )
+    expect(renderedContrast('#002b36', 0.5, '#839496', '#0a0a0a', percent - 1)).toBeLessThan(
+      MUTED_FOREGROUND_MIN_CONTRAST
+    )
+  })
+
+  it('accounts for a translucent foreground', () => {
+    // Half-transparent black on white can never reach 4.5:1 (its 100% is mid-gray, ~4:1).
+    expect(resolveMutedForegroundMixPercent('#ffffff', 'rgba(0, 0, 0, 0.5)')).toBe(100)
+    expect(resolveMutedForegroundMixPercent('#ffffff', 'rgba(0, 0, 0, 0.8)')).toBeGreaterThan(
+      resolveMutedForegroundMixPercent('#ffffff', '#000000')
+    )
   })
 
   it('keeps the global ratio for colors it cannot parse', () => {

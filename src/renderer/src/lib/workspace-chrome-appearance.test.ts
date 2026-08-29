@@ -91,6 +91,25 @@ describe('resolveWorkspaceChromeStyleVariables', () => {
     expect(dark?.['--bg-titlebar']).not.toBe(light?.['--bg-titlebar'])
   })
 
+  it('paints editor panes with the terminal background and exposes its syntax palette', () => {
+    const vars = resolveWorkspaceChromeStyleVariables(
+      settings({
+        workspaceChromeAppearanceMode: 'match-terminal',
+        terminalColorOverrides: {
+          background: '#101820',
+          foreground: '#f0f4f8',
+          magenta: '#ff00ff',
+          green: '#00ff00'
+        }
+      }),
+      true
+    )
+
+    expect(vars?.['--editor-surface']).toBe('#101820')
+    expect(vars?.['--syntax-keyword']).toBe('#ff00ff')
+    expect(vars?.['--syntax-string']).toBe('#00ff00')
+  })
+
   it('honors terminal background opacity', () => {
     const vars = resolveWorkspaceChromeStyleVariables(
       settings({

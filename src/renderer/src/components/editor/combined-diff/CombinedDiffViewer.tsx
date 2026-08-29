@@ -6,6 +6,7 @@ import { selectWorktreeDiffCommentsOrEmpty } from '@/store/worktree-diff-comment
 import type { OpenFile } from '@/store/slices/editor'
 import '@/lib/monaco-setup'
 import type { DiffSection } from '../diff-section-types'
+import { useMonacoEditorTheme } from '../use-monaco-editor-theme'
 import {
   EMPTY_GIT_BRANCH_ENTRIES,
   EMPTY_GIT_STATUS_ENTRIES,
@@ -62,9 +63,7 @@ export default function CombinedDiffViewer({
   )
   const activeGroupId = useAppStore((s) => s.activeGroupIdByWorktree[file.worktreeId])
   const canOpenWorkspaceFileBrowserForPath = useWorkspaceFileBrowserActionPredicate(file.worktreeId)
-  const isDark =
-    settings?.theme === 'dark' ||
-    (settings?.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  const { theme: monacoTheme } = useMonacoEditorTheme()
 
   const [sections, setSections] = useState<DiffSection[]>([])
   const [sectionHeights, setSectionHeights] = useState<Record<number, number>>({})
@@ -349,7 +348,7 @@ export default function CombinedDiffViewer({
             isAllMode={entrySet.isAllMode}
             isBranchMode={entrySet.isBranchMode}
             isCommitMode={entrySet.isCommitMode}
-            isDark={isDark}
+            monacoTheme={monacoTheme}
             loadSection={loadSection}
             markDirectScrollInput={markDirectScrollInput}
             modifiedEditorsRef={modifiedEditorsRef}

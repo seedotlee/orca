@@ -6541,7 +6541,7 @@
           },
           "workspaceChromeAppearance": {
             "title": "App Chrome Appearance",
-            "rowDescription": "Make the tab bar, status bar, side panels, full-page views, and popovers match your terminal theme, or keep the app theme.",
+            "rowDescription": "Make the tab bar, status bar, side panels, full-page views, popovers, and file editors match your terminal theme, or keep the app theme.",
             "default": "Default",
             "matchTerminal": "Match Terminal"
           }

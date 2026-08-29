@@ -35,6 +35,7 @@ import type { Components, Options as ReactMarkdownOptions } from 'react-markdown
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAppStore } from '@/store'
+import { useEditorSurfaceAppearance } from './use-editor-surface-appearance'
 import { toast } from 'sonner'
 import { computeEditorFontSize } from '@/lib/editor-font-zoom'
 import { getConnectionIdForFile } from '@/lib/connection-context'
@@ -640,9 +641,7 @@ export default function MarkdownPreview({
   )
   const editorFontZoomLevel = useAppStore((s) => s.editorFontZoomLevel)
   const editorFontSize = computeEditorFontSize(14, editorFontZoomLevel)
-  const isDark =
-    settings?.theme === 'dark' ||
-    (settings?.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  const { isDark } = useEditorSurfaceAppearance()
 
   const renderedContent = usePreserveSectionDuringExternalEdit(content, bodyRef)
 

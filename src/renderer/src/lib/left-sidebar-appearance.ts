@@ -23,11 +23,14 @@ function buildSurfaceVariables(args: {
   background: string
   foreground: string
   overrideTextTokens?: boolean
+  appSurface?: 'dark' | 'light'
 }): LeftSidebarStyleVariables {
-  const { background, foreground, overrideTextTokens = false } = args
+  const { background, foreground, overrideTextTokens = false, appSurface } = args
   return {
     ...buildSidebarTokenVariables({ background, foreground }),
-    ...(overrideTextTokens ? buildSurfaceTextTokenVariables({ background, foreground }) : {})
+    ...(overrideTextTokens
+      ? buildSurfaceTextTokenVariables({ background, foreground, appSurface })
+      : {})
   }
 }
 
@@ -36,8 +39,8 @@ function resolveTerminalSurfaceVariables(
   settings: LeftSidebarAppearanceSettings,
   systemPrefersDark: boolean
 ): LeftSidebarStyleVariables {
-  const { background, foreground } = resolveTerminalSurfaceColors(settings, systemPrefersDark)
-  return buildSurfaceVariables({ background, foreground, overrideTextTokens: true })
+  const colors = resolveTerminalSurfaceColors(settings, systemPrefersDark)
+  return buildSurfaceVariables({ ...colors, overrideTextTokens: true })
 }
 
 function resolveTintedSurfaceVariables(

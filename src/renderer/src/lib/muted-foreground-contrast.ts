@@ -1,4 +1,8 @@
-import { parseCssRgbColor, type RgbaColor } from './terminal-title-contrast'
+import {
+  compositeTerminalBackground,
+  parseCssRgbColor,
+  type RgbaColor
+} from './terminal-title-contrast'
 
 /** Global --muted-foreground ratio; the light default (#737373 on #fafafa) sits right at 4.5:1. */
 export const MUTED_FOREGROUND_MIX_PERCENT = 62
@@ -36,8 +40,14 @@ function mixSrgb(foreground: RgbaColor, background: RgbaColor, percent: number):
 /** Why: a fixed 62% mix assumes a near-black/near-white foreground. Low-contrast themes (Solarized
  *  Light's #586e75 on #fdf6e3 is ~5:1) mix down to ~2.4:1 and sidebar captions vanish, so raise the
  *  mix until muted text clears the floor — up to the foreground itself when nothing less will. */
-export function resolveMutedForegroundMixPercent(background: string, foreground: string): number {
-  const bg = parseCssRgbColor(background)
+export function resolveMutedForegroundMixPercent(
+  background: string,
+  foreground: string,
+  options: { appSurface?: 'dark' | 'light' } = {}
+): number {
+  // Why: a translucent background renders over the app surface, and `color-mix(fg P%, rgba-bg)`
+  // composited over that surface equals `mixSrgb(fg, composited-bg, P)` — so gate on the composited color.
+  const bg = compositeTerminalBackground(background, { appSurface: options.appSurface })
   const fg = parseCssRgbColor(foreground)
   if (!bg || !fg) {
     return MUTED_FOREGROUND_MIX_PERCENT

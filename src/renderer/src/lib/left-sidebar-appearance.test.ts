@@ -54,6 +54,25 @@ describe('resolveLeftSidebarStyleVariables', () => {
     expect(vars?.['--muted-foreground']).toBe(`color-mix(in srgb, #586e75 ${percent}%, #fdf6e3)`)
   })
 
+  it('gates muted text on the background as composited over the app surface', () => {
+    const vars = resolveLeftSidebarStyleVariables(
+      settings({
+        leftSidebarAppearanceMode: 'match-terminal',
+        terminalColorOverrides: { background: '#fdf6e3', foreground: '#586e75' },
+        terminalBackgroundOpacity: 0.5,
+        theme: 'dark'
+      }),
+      true
+    )
+    const percent = resolveMutedForegroundMixPercent('rgba(253, 246, 227, 0.5)', '#586e75', {
+      appSurface: 'dark'
+    })
+    expect(percent).toBeGreaterThan(resolveMutedForegroundMixPercent('#fdf6e3', '#586e75'))
+    expect(vars?.['--muted-foreground']).toBe(
+      `color-mix(in srgb, #586e75 ${percent}%, rgba(253, 246, 227, 0.5))`
+    )
+  })
+
   it('honors terminal background opacity for matched terminal surfaces', () => {
     const vars = resolveLeftSidebarStyleVariables(
       settings({

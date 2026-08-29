@@ -19,6 +19,8 @@ export type TerminalSurfaceSettings = Pick<
 export type TerminalSurfaceColors = {
   background: string
   foreground: string
+  /** App surface a translucent background composites over; drives the muted-text contrast gate. */
+  appSurface?: 'dark' | 'light'
 }
 
 export type SurfaceStyleVariables = Record<string, string>
@@ -58,7 +60,7 @@ export function resolveTerminalSurfaceColors(
   )
   const foreground =
     settings.terminalColorOverrides?.foreground ?? appearance.theme?.foreground ?? '#fafafa'
-  return { background, foreground }
+  return { background, foreground, appSurface: appearance.mode }
 }
 
 /** Re-derives the shadcn text/surface token family from a terminal color pair so chrome scoped
@@ -66,9 +68,10 @@ export function resolveTerminalSurfaceColors(
  *  tokens (7% border, #5906) except muted text, which is contrast-gated. */
 export function buildSurfaceTextTokenVariables({
   background,
-  foreground
+  foreground,
+  appSurface
 }: TerminalSurfaceColors): SurfaceStyleVariables {
-  const mutedPercent = resolveMutedForegroundMixPercent(background, foreground)
+  const mutedPercent = resolveMutedForegroundMixPercent(background, foreground, { appSurface })
   return {
     '--background': background,
     '--foreground': foreground,

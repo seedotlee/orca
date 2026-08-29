@@ -45,11 +45,16 @@ export function resolveTerminalTextContrastRatio(
 ): number | null {
   const composited = compositeTerminalBackground(background, options)
   const text = parseCssRgbColor(foreground)
-  return composited && text ? contrastRatio(text, composited) : null
+  if (!composited || !text) {
+    return null
+  }
+  // Why: a translucent foreground shows the background through it; rate the color actually seen.
+  const visibleText = text.a < 1 ? compositeRgb(text, composited, text.a) : text
+  return contrastRatio(visibleText, composited)
 }
 
 /** Terminal background as the opaque color actually seen: alpha × opacity blended over the app surface. */
-function compositeTerminalBackground(
+export function compositeTerminalBackground(
   background: string | undefined,
   options: { backgroundOpacity?: number; appSurface?: 'dark' | 'light' } = {}
 ): RgbaColor | null {

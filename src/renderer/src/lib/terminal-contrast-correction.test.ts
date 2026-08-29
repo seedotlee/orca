@@ -6,6 +6,7 @@ import {
   resolveTerminalMinimumContrastRatio
 } from './terminal-contrast-correction'
 import { TERMINAL_THEME_CATALOG } from './terminal-themes'
+import { resolveTerminalTextContrastRatio } from './terminal-title-contrast'
 
 // WCAG relative-luminance contrast ratio, matching xterm's minimumContrastRatio gate.
 function contrastRatio(a: string, b: string): number {
@@ -102,6 +103,17 @@ describe('resolveTerminalMinimumContrastRatio foreground headroom', () => {
 
   it('falls back to the plain floor for an unparseable foreground', () => {
     expect(resolveTerminalMinimumContrastRatio('#fdf6e3', 'light', 'not-a-color')).toBe(
+      LIGHT_BG_MIN_CONTRAST
+    )
+  })
+
+  it('rates a translucent foreground by the color actually seen over the background', () => {
+    // rgba(0,0,0,0.1) over white renders as #e6e6e6 (~1.25:1), not black (21:1).
+    expect(resolveTerminalTextContrastRatio('#ffffff', 'rgba(0, 0, 0, 0.1)')).toBe(
+      resolveTerminalTextContrastRatio('#ffffff', '#e6e6e6')
+    )
+    expect(resolveTerminalMinimumContrastRatio('#ffffff', 'light', 'rgba(0, 0, 0, 0.1)')).toBe(1)
+    expect(resolveTerminalMinimumContrastRatio('#ffffff', 'light', '#000000')).toBe(
       LIGHT_BG_MIN_CONTRAST
     )
   })

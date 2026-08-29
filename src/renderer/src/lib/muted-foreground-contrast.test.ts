@@ -66,10 +66,25 @@ describe('resolveMutedForegroundMixPercent', () => {
     expect(resolveMutedForegroundMixPercent('#fdf6e3', '#93a1a1')).toBe(100)
   })
 
-  it('reads rgba() backgrounds (terminal background opacity applied)', () => {
-    expect(resolveMutedForegroundMixPercent('rgba(253, 246, 227, 0.9)', '#586e75')).toBe(
+  it('treats a fully opaque rgba() background like its hex form', () => {
+    expect(resolveMutedForegroundMixPercent('rgba(253, 246, 227, 1)', '#586e75')).toBe(
       resolveMutedForegroundMixPercent('#fdf6e3', '#586e75')
     )
+  })
+
+  it('composites a translucent background over the app surface before gating', () => {
+    const translucent = 'rgba(253, 246, 227, 0.5)'
+    // 50% Solarized Light over the light surface (#ffffff) / the dark surface (#0a0a0a).
+    const overLight = resolveMutedForegroundMixPercent(translucent, '#586e75', {
+      appSurface: 'light'
+    })
+    const overDark = resolveMutedForegroundMixPercent(translucent, '#586e75', {
+      appSurface: 'dark'
+    })
+    expect(overLight).toBe(resolveMutedForegroundMixPercent('#fefbf1', '#586e75'))
+    expect(overDark).toBe(resolveMutedForegroundMixPercent('#848077', '#586e75'))
+    // The dark surface pulls the composited background toward the foreground, so it needs far more mix.
+    expect(overDark).toBeGreaterThan(overLight)
   })
 
   it('keeps the global ratio for colors it cannot parse', () => {

@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import type { ProviderRateLimits } from '../../../../shared/rate-limit-types'
 import type { StatusBarUsageFormat } from '../../../../shared/status-bar-usage-format'
 import { normalizeUsagePercentageDisplay } from '../../../../shared/usage-percentage-display'
@@ -70,16 +70,17 @@ export function StatusBarUsageFormatSetting({
   const entry = getStatusBarUsageFormatEntry()
   const template = format.template
   const hasTemplate = template.trim().length > 0
+  // Why: the sample's reset times are relative to `now`, so a mount-time clock keeps the preview stable.
+  const [now] = useState(() => Date.now())
   const preview = useMemo(() => {
     if (!hasTemplate) {
       return null
     }
-    const now = Date.now()
     return renderUsageFormatTemplate(
       template,
       buildUsageFormatValues(sampleLimits(now), { display, now })
     )
-  }, [display, hasTemplate, template])
+  }, [display, hasTemplate, now, template])
 
   return (
     <div className="space-y-2">

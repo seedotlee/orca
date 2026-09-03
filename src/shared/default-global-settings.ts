@@ -127,6 +127,7 @@ export function buildDefaultSettings(args: {
     terminalLinkActionPopoverEnabled: true,
     openAgentTabsInChatByDefault: false,
     experimentalNativeChat: false,
+    experimentalStructuredNativeChat: false,
     nativeChatSessionOptions: {},
     openInApplications: [...DEFAULT_OPEN_IN_APPLICATIONS],
     rightSidebarOpenByDefault: true,

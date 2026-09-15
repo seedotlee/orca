@@ -70,6 +70,7 @@ export default function AgentDashboardSidebarEntry(): React.JSX.Element {
   return (
     <button
       type="button"
+      data-contextual-tour-target="agents-sidebar"
       onClick={() => {
         if (openAsPopout) {
           void window.api.dashboard.openPopout()
@@ -83,7 +84,9 @@ export default function AgentDashboardSidebarEntry(): React.JSX.Element {
       )}
     >
       <LayoutDashboard className="size-4 shrink-0 text-muted-foreground/50" strokeWidth={1.75} />
-      <span className="flex-1">{translate('dashboard.sidebar.label', 'Agent Dashboard')}</span>
+      <span className="flex-1">
+        {translate('dashboard.sidebar.dashboardLabel', 'Agent Dashboard')}
+      </span>
       <DashboardBucketCounts counts={dashboardBucketCounts} showIdle={showIdle} />
     </button>
   )

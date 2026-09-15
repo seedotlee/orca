@@ -3,6 +3,9 @@ import {
   DARK_BG_MIN_CONTRAST,
   DIM_TEXT_CONTRAST_HEADROOM,
   LIGHT_BG_MIN_CONTRAST,
+  MAX_TERMINAL_CONTRAST_RATIO,
+  MIN_TERMINAL_CONTRAST_RATIO,
+  normalizeTerminalMinimumContrastRatio,
   resolveTerminalMinimumContrastRatio
 } from './terminal-contrast-correction'
 import { TERMINAL_THEME_CATALOG } from './terminal-themes'
@@ -58,10 +61,10 @@ describe('resolveTerminalMinimumContrastRatio foreground headroom', () => {
   const SOLARIZED_LIGHT = { background: '#fdf6e3', foreground: '#586e75' }
 
   it('keeps the light floor when the foreground has plenty of contrast', () => {
-    expect(resolveTerminalMinimumContrastRatio('#ffffff', 'light', '#000000')).toBe(
+    expect(resolveTerminalMinimumContrastRatio('#ffffff', 'light', undefined, '#000000')).toBe(
       LIGHT_BG_MIN_CONTRAST
     )
-    expect(resolveTerminalMinimumContrastRatio('#fbf1c7', 'dark', '#3c3836')).toBe(
+    expect(resolveTerminalMinimumContrastRatio('#fbf1c7', 'dark', undefined, '#3c3836')).toBe(
       LIGHT_BG_MIN_CONTRAST
     )
   })
@@ -70,6 +73,7 @@ describe('resolveTerminalMinimumContrastRatio foreground headroom', () => {
     const floor = resolveTerminalMinimumContrastRatio(
       SOLARIZED_LIGHT.background,
       'dark',
+      undefined,
       SOLARIZED_LIGHT.foreground
     )
     const fgContrast = contrastRatio(SOLARIZED_LIGHT.background, SOLARIZED_LIGHT.foreground)
@@ -82,6 +86,7 @@ describe('resolveTerminalMinimumContrastRatio foreground headroom', () => {
     const floor = resolveTerminalMinimumContrastRatio(
       SOLARIZED_LIGHT.background,
       'dark',
+      undefined,
       SOLARIZED_LIGHT.foreground
     )
     expect(contrastRatio(SOLARIZED_LIGHT.background, '#93a1a1')).toBeGreaterThanOrEqual(
@@ -90,24 +95,24 @@ describe('resolveTerminalMinimumContrastRatio foreground headroom', () => {
   })
 
   it('keeps the dark floor for a high-contrast dark theme', () => {
-    expect(resolveTerminalMinimumContrastRatio('#1e242a', 'dark', '#e6edf3')).toBe(
+    expect(resolveTerminalMinimumContrastRatio('#1e242a', 'dark', undefined, '#e6edf3')).toBe(
       DARK_BG_MIN_CONTRAST
     )
   })
 
   it('lowers the dark floor too when the dark theme foreground is low-contrast', () => {
     // Solarized Dark: fg #839496 ~4.75:1, brightBlack #586e75 ~2.8:1 — must stay untouched.
-    const floor = resolveTerminalMinimumContrastRatio('#002b36', 'dark', '#839496')
+    const floor = resolveTerminalMinimumContrastRatio('#002b36', 'dark', undefined, '#839496')
     expect(floor).toBeLessThan(DARK_BG_MIN_CONTRAST)
     expect(contrastRatio('#002b36', '#586e75')).toBeGreaterThanOrEqual(floor)
   })
 
   it('bottoms out at 1 (correction off) for a pathological foreground', () => {
-    expect(resolveTerminalMinimumContrastRatio('#fdf6e3', 'light', '#f0ead8')).toBe(1)
+    expect(resolveTerminalMinimumContrastRatio('#fdf6e3', 'light', undefined, '#f0ead8')).toBe(1)
   })
 
   it('falls back to the plain floor for an unparseable foreground', () => {
-    expect(resolveTerminalMinimumContrastRatio('#fdf6e3', 'light', 'not-a-color')).toBe(
+    expect(resolveTerminalMinimumContrastRatio('#fdf6e3', 'light', undefined, 'not-a-color')).toBe(
       LIGHT_BG_MIN_CONTRAST
     )
   })
@@ -117,10 +122,69 @@ describe('resolveTerminalMinimumContrastRatio foreground headroom', () => {
     expect(resolveTerminalTextContrastRatio('#ffffff', 'rgba(0, 0, 0, 0.1)')).toBe(
       resolveTerminalTextContrastRatio('#ffffff', '#e6e6e6')
     )
-    expect(resolveTerminalMinimumContrastRatio('#ffffff', 'light', 'rgba(0, 0, 0, 0.1)')).toBe(1)
-    expect(resolveTerminalMinimumContrastRatio('#ffffff', 'light', '#000000')).toBe(
+    expect(
+      resolveTerminalMinimumContrastRatio('#ffffff', 'light', undefined, 'rgba(0, 0, 0, 0.1)')
+    ).toBe(1)
+    expect(resolveTerminalMinimumContrastRatio('#ffffff', 'light', undefined, '#000000')).toBe(
       LIGHT_BG_MIN_CONTRAST
     )
+  })
+})
+
+// #10754: the automatic floor rewrites deliberately low-contrast TUI output (Powerline seams, dimmed
+// secondary text), so the user setting has to win over the luminance gate on both backgrounds.
+describe('resolveTerminalMinimumContrastRatio with a user override', () => {
+  it('lets 1 disable contrast correction on a dark background', () => {
+    expect(resolveTerminalMinimumContrastRatio('#1e242a', 'dark', 1)).toBe(1)
+  })
+
+  it('lets 1 disable contrast correction on a light background too', () => {
+    expect(resolveTerminalMinimumContrastRatio('#ffffff', 'light', 1)).toBe(1)
+  })
+
+  it('honors an intermediate override instead of the automatic floor', () => {
+    expect(resolveTerminalMinimumContrastRatio('#1e242a', 'dark', 1.5)).toBe(1.5)
+    expect(resolveTerminalMinimumContrastRatio('#ffffff', 'light', 7)).toBe(7)
+  })
+
+  it("clamps an out-of-range override to xterm's 1-21 window", () => {
+    expect(resolveTerminalMinimumContrastRatio('#1e242a', 'dark', 0)).toBe(
+      MIN_TERMINAL_CONTRAST_RATIO
+    )
+    expect(resolveTerminalMinimumContrastRatio('#1e242a', 'dark', -5)).toBe(
+      MIN_TERMINAL_CONTRAST_RATIO
+    )
+    expect(resolveTerminalMinimumContrastRatio('#1e242a', 'dark', 99)).toBe(
+      MAX_TERMINAL_CONTRAST_RATIO
+    )
+  })
+
+  it('falls back to the automatic floor when the override is unset or unusable', () => {
+    // A hand-edited settings file can carry any of these; xterm throws on a non-finite option.
+    for (const value of [undefined, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(resolveTerminalMinimumContrastRatio('#1e242a', 'dark', value)).toBe(
+        DARK_BG_MIN_CONTRAST
+      )
+      expect(resolveTerminalMinimumContrastRatio('#ffffff', 'light', value)).toBe(
+        LIGHT_BG_MIN_CONTRAST
+      )
+    }
+  })
+})
+
+describe('normalizeTerminalMinimumContrastRatio', () => {
+  it('returns undefined for anything that is not a usable number', () => {
+    for (const value of [undefined, null, '3', Number.NaN, Number.POSITIVE_INFINITY, {}]) {
+      expect(normalizeTerminalMinimumContrastRatio(value)).toBeUndefined()
+    }
+  })
+
+  it('passes in-range values through and clamps the rest', () => {
+    expect(normalizeTerminalMinimumContrastRatio(1)).toBe(1)
+    expect(normalizeTerminalMinimumContrastRatio(4.5)).toBe(4.5)
+    expect(normalizeTerminalMinimumContrastRatio(21)).toBe(21)
+    expect(normalizeTerminalMinimumContrastRatio(0.5)).toBe(1)
+    expect(normalizeTerminalMinimumContrastRatio(1000)).toBe(21)
   })
 })
 

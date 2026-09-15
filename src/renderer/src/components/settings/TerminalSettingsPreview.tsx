@@ -208,6 +208,7 @@ export function TerminalSettingsPreview({
     terminal.options.minimumContrastRatio = resolveTerminalMinimumContrastRatio(
       composedTheme.background,
       effectiveMode,
+      settings.terminalMinimumContrastRatio,
       composedTheme.foreground
     )
     // Why: xterm renders an alpha-channel background opaque unless allowTransparency is set (matches applyTerminalAppearance).
@@ -220,7 +221,12 @@ export function TerminalSettingsPreview({
     // Why reset() not clear(): buffer ends mid-line on the prompt, so clear()+write would duplicate the trailing fragment.
     terminal.reset()
     terminal.write(PREVIEW_BUFFER)
-  }, [composedTheme, effectiveMode, settings.terminalBackgroundOpacity])
+  }, [
+    composedTheme,
+    effectiveMode,
+    settings.terminalBackgroundOpacity,
+    settings.terminalMinimumContrastRatio
+  ])
 
   useEffect(() => {
     const terminal = terminalRef.current

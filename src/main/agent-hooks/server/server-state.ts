@@ -25,6 +25,7 @@ import type {
   AgentHookAuthorityEvidence,
   AgentHookProviderSessionIdentity,
   AgentHookStatusChangeEntry,
+  AgentHookStatusFreshnessObservation,
   AgentPromptSentDedupeEntry,
   EnrichedAgentHookEventPayload,
   NormalizedLocalHook,
@@ -37,7 +38,9 @@ import type {
   ServerAgentStatusListener,
   ServerStatusLineListener,
   StatusChangeListener,
-  StatusDropListener
+  StatusDropListener,
+  StatusFreshnessListener,
+  StatusRowMutationListener
 } from './server-types'
 
 /** Shared mutable state for the layered hook-server implementation. */
@@ -53,7 +56,14 @@ export abstract class AgentHookServerState {
   protected paneStatusClearListeners = new Set<PaneStatusClearListener>()
   protected statusDropListeners = new Set<StatusDropListener>()
   protected statusChangeListeners = new Set<StatusChangeListener>()
+  protected statusFreshnessListeners = new Set<StatusFreshnessListener>()
   protected providerSessionChangeListeners = new Set<ProviderSessionChangeListener>()
+  protected statusRowMutationListeners = new Set<StatusRowMutationListener>()
+  // Hydration and spool replay belong to the owner lifetime, not each transport bind attempt.
+  protected ownerStateInitialized = false
+  // Runtime terminal handles are stable across pane remints, unlike tab/leaf keys. This index is
+  // deliberately in-memory only and contains no rows of its own.
+  protected paneKeyByTerminalHandle = new Map<string, string>()
   // Why: setListener is a single slot owned by the main-window fanout; the
   // plugin event bus (and future consumers) need an additive subscription
   // that also works in headless serve, where no window listener exists.
@@ -97,6 +107,10 @@ export abstract class AgentHookServerState {
   protected closedAgentStatusPaneKeys = new Set<string>()
   protected restartedStatusLaunchTokenHashByPaneKey = new Map<string, string>()
   protected connectionTimestampWatermarkById = new Map<string, number>()
+  // Why: survives the row itself. A transport clear deletes the pane's status row on purpose
+  // (absence, not completion), but the *age* of the evidence a later replay restates is not a
+  // claim about the pane and must not be lost with it. Bounded like its sibling maps.
+  protected evidenceObservedAtByPaneKey = new Map<string, number>()
   // Why: skip disk writes when the JSON exactly matches the last write; guards against re-firing trailing timers when nothing changed.
   protected lastWrittenJson: string | null = null
   // Why: main is the pane authority for local/WSL/SSH panes — hook HTTP, relay, and its own
@@ -113,6 +127,9 @@ export abstract class AgentHookServerState {
     providerSessions: AgentHookProviderSessionIdentity[]
   }
   protected abstract notifyStatusChangeListeners(): void
+  protected abstract emitStatusFreshnessObservation(
+    status: AgentHookStatusFreshnessObservation
+  ): void
   protected abstract markTabClosedForAgentStatus(tabId: string): void
   protected abstract getAgentStatusDisposition(
     paneKey: string,
@@ -133,7 +150,8 @@ export abstract class AgentHookServerState {
   protected abstract markPaneClosedForAgentStatus(paneKey: string): void
   protected abstract attachStatusTiming(
     payload: AgentHookEventPayload,
-    now?: number
+    now?: number,
+    observedAt?: number
   ): EnrichedAgentHookEventPayload
   protected abstract hashPromptForTelemetryDedupe(prompt: string): string
   protected abstract maybeTrackAgentPromptSent(
@@ -148,7 +166,9 @@ export abstract class AgentHookServerState {
   protected abstract applyNormalizedStatus(
     payload: AgentHookEventPayload,
     onAccepted?: () => void,
-    origin?: AgentStatusObservationOrigin
+    origin?: AgentStatusObservationOrigin,
+    observedAt?: number,
+    mutationBefore?: EnrichedAgentHookEventPayload
   ): EnrichedAgentHookEventPayload
   protected abstract emitEnrichedStatus(enriched: EnrichedAgentHookEventPayload): void
   protected abstract clearAssistantMessageRetry(paneKey: string): void
@@ -194,7 +214,10 @@ export abstract class AgentHookServerState {
     entry: EnrichedAgentHookEventPayload | null | undefined
   ): EnrichedAgentHookEventPayload | null
   protected abstract hasLiveClaimsForPaneKey(paneKey: string): boolean
-  protected abstract clearPaneState(paneKey: string): void
+  protected abstract clearPaneState(
+    paneKey: string,
+    options?: { emitStatusRowMutation?: boolean }
+  ): void
   protected abstract deleteStatusEntry(
     paneKey: string,
     options?: { preserveAuthority?: boolean }

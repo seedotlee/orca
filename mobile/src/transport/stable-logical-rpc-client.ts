@@ -55,6 +55,9 @@ export type StableLogicalRpcClient = RpcClient & {
   // Latched when the desktop has repeatedly refused this device's relay credential.
   setPairingRejected(rejected: boolean): void
   isPairingRejected(): boolean
+  // Latched when the relay named the desktop's own sign-out as the reason it is absent.
+  setHostSignedOut(signedOut: boolean): void
+  isHostSignedOut(): boolean
   // Recovery attempts share this signal so status-only changes rerender.
   onConnectionPathChange(listener: () => void): () => void
   getGeneration(): number
@@ -87,7 +90,6 @@ export function createStableLogicalRpcClient(
       if (suspended) {
         return Promise.reject(new Error('Client suspended'))
       }
-      const requestGeneration = generation
       const session = activeSession
       return new Promise<RpcResponse>((resolve, reject) => {
         const pending = { reject }
@@ -97,13 +99,9 @@ export function createStableLogicalRpcClient(
           .then(
             (response) => {
               pendingRequests.delete(pending)
-              if (closed) {
-                reject(new Error('Client closed'))
-              } else if (requestGeneration !== generation) {
-                reject(new LogicalClientCutoverError())
-              } else {
-                resolve(response)
-              }
+              // A correlated response is definitive even if close/cutover won the
+              // callback race after the physical promise had already settled.
+              resolve(response)
             },
             (error: unknown) => {
               pendingRequests.delete(pending)
@@ -282,6 +280,8 @@ export function createStableLogicalRpcClient(
     setRecoveryAttempt: (attempt) => connectionPath.setRecoveryAttempt(attempt),
     setPairingRejected: (rejected) => connectionPath.setPairingRejected(rejected),
     isPairingRejected: () => connectionPath.isPairingRejected(),
+    setHostSignedOut: (signedOut) => connectionPath.setHostSignedOut(signedOut),
+    isHostSignedOut: () => connectionPath.isHostSignedOut(),
     onConnectionPathChange: (listener) => connectionPath.subscribe(listener),
     getGeneration: () => generation
   }

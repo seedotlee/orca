@@ -1,9 +1,11 @@
 import type { PersistedUIState } from '../../../../../shared/persisted-ui-state-types'
 import type {
+  ActivityGroupBy,
   AgentActivityDisplayMode,
   ManualRepoOrderEntry,
   ProjectOrderBy,
   StatusBarItem,
+  ThreadReadFilter,
   WorktreeCardMode,
   WorktreeCardProperty,
   WorkspaceHostOrder,
@@ -23,6 +25,9 @@ import type { PersistedUIWriteBaseline } from '../persisted-ui-write-baseline'
 import type { UISliceCore } from './ui-slice-contract-core'
 
 export type UISlicePreferences = {
+  /** Which list the sidebar body shows. Navigator-only; does not change the active view. */
+  sidebarBody: 'workspaces' | 'agents'
+  setSidebarBody: (body: UISlicePreferences['sidebarBody']) => void
   groupBy: 'none' | 'workspace-status' | 'repo' | 'pr-status'
   setGroupBy: (g: UISlicePreferences['groupBy']) => void
   sortBy: 'name' | 'smart' | 'recent' | 'repo' | 'manual'
@@ -60,6 +65,21 @@ export type UISlicePreferences = {
   toggleShowDotfilesForWorktree: (worktreeId: string) => void
   filterRepoIds: readonly string[]
   setFilterRepoIds: (ids: readonly string[]) => void
+  /** Agents-view scope filters, independent from workspace navigation filters. */
+  agentsVisibleHostIds: VisibleWorkspaceHostIds
+  setAgentsVisibleHostIds: (ids: VisibleWorkspaceHostIds) => void
+  agentsFilterRepoIds: readonly string[]
+  setAgentsFilterRepoIds: (ids: readonly string[]) => void
+  agentsShowChildAgents: boolean
+  setAgentsShowChildAgents: (v: boolean) => void
+  agentsCompactMode: boolean
+  setAgentsCompactMode: (v: boolean) => void
+  agentsShowSearch: boolean
+  setAgentsShowSearch: (v: boolean) => void
+  agentsReadFilter: ThreadReadFilter
+  setAgentsReadFilter: (v: ThreadReadFilter) => void
+  agentsGroupBy: ActivityGroupBy
+  setAgentsGroupBy: (v: ActivityGroupBy) => void
   collapsedGroups: Set<string>
   toggleCollapsedGroup: (key: string) => void
   worktreeCardProperties: WorktreeCardProperty[]
@@ -158,10 +178,14 @@ export type UISlicePersistence = {
   dismissedUpdateVersion: string | null
   dismissUpdate: (versionOverride?: string) => void
   clearDismissedUpdateVersion: () => void
+  /** App version that dismissed the unexpected-sign-out card; null = never dismissed. */
+  dismissedUnexpectedSignoutVersion: string | null
+  unexpectedSignoutDismissedVersions: string[]
+  dismissUnexpectedSignoutCard: (version: string) => void
   /** Dev-only channel override; null follows the running build's own channel. */
   releaseChannelOverride: ReleaseChannel | null
   setReleaseChannelOverride: (channel: ReleaseChannel | null) => void
-  // Why: ephemeral, renderer-only — never persisted; resets each session and on every phase transition (see setUpdateStatus).
+  // Ephemeral disclosure state; setUpdateStatus initializes it when the phase or error actionability changes.
   updateCardCollapsed: boolean
   setUpdateCardCollapsed: (collapsed: boolean) => void
   updateReassuranceSeen: boolean

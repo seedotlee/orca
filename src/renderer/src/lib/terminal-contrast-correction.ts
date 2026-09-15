@@ -2,6 +2,13 @@ import {
   isTerminalBackgroundLight,
   resolveTerminalTextContrastRatio
 } from '@/lib/terminal-title-contrast'
+import { normalizeTerminalMinimumContrastRatio } from '../../../shared/terminal-minimum-contrast-settings'
+
+export {
+  MAX_TERMINAL_CONTRAST_RATIO,
+  MIN_TERMINAL_CONTRAST_RATIO,
+  normalizeTerminalMinimumContrastRatio
+} from '../../../shared/terminal-minimum-contrast-settings'
 
 // xterm minimumContrastRatio tuning (#7934, #9599, #10104). Light backgrounds keep WCAG-AA correction so
 // invisible white/bright-white ANSI body text stays readable. Dark backgrounds use a mild floor of 3
@@ -22,16 +29,24 @@ export const DARK_BG_MIN_CONTRAST = 3
 export const DIM_TEXT_CONTRAST_HEADROOM = 2
 
 /**
- * xterm `minimumContrastRatio` for a composed theme: the luminance-gated floor, capped below the
- * theme's own foreground contrast so dim palette slots survive (see `DIM_TEXT_CONTRAST_HEADROOM`).
+ * xterm `minimumContrastRatio` for a composed theme: the user's explicit override when set, else the
+ * luminance-gated floor capped below the theme's own foreground contrast so dim palette slots
+ * survive (see `DIM_TEXT_CONTRAST_HEADROOM`).
  * Why gate by background luminance, not app mode (#7934): either theme slot can hold either kind of
  * theme (match-dark-mode, or a light theme in the dark slot), so follow the composed background.
+ * `override` is the user's terminalMinimumContrastRatio; clamped here too so a hand-edited settings
+ * file can't hand xterm an out-of-range or non-finite floor.
  */
 export function resolveTerminalMinimumContrastRatio(
   background: string | undefined,
   appSurface: 'dark' | 'light',
+  override?: number,
   foreground?: string
 ): number {
+  const configured = normalizeTerminalMinimumContrastRatio(override)
+  if (configured !== undefined) {
+    return configured
+  }
   const floor = isTerminalBackgroundLight(background, { appSurface })
     ? LIGHT_BG_MIN_CONTRAST
     : DARK_BG_MIN_CONTRAST

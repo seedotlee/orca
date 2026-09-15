@@ -81,6 +81,7 @@ export function buildPreviewTerminalOptions(args: {
     minimumContrastRatio: resolveTerminalMinimumContrastRatio(
       args.theme?.background,
       args.themeMode,
+      args.settings?.terminalMinimumContrastRatio,
       args.theme?.foreground
     )
   }

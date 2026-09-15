@@ -15,6 +15,10 @@ vi.mock('./e2ee', () => ({
   decryptBytes: (bytes: Uint8Array) => bytes
 }))
 
+vi.mock('./mobile-runtime-capability-negotiation', () => ({
+  negotiateMobileRuntimeCapabilities: (args: { onReady: () => void }) => args.onReady()
+}))
+
 class MockWebSocket {
   static CONNECTING = 0
   static OPEN = 1
@@ -140,6 +144,34 @@ describe('mobile rpc-client delivery ambiguity marking', () => {
 
     const error = await requestError
     expect(error).toMatchObject({ message: 'Request timed out: terminal.send' })
+    expect(isRpcDeliveryUnknown(error)).toBe(true)
+    client.close()
+  })
+
+  it('marks a written request unknown when another request triggers auth recovery', async () => {
+    const { client, socket } = connectAuthenticated()
+    const sendError = client.sendRequest('terminal.send', { terminal: 't' }).then(
+      () => null,
+      (error: Error) => error
+    )
+    const authProbe = client.sendRequest('status.get')
+    await Promise.resolve()
+    const probe = socket.sent
+      .map(
+        (payload) =>
+          JSON.parse(payload.replace(/^encrypted:/, '')) as { id: string; method: string }
+      )
+      .find((request) => request.method === 'status.get')!
+
+    socket.receive(
+      `encrypted:${JSON.stringify({ id: probe.id, ok: false, error: { code: 'unauthorized', message: 'Unauthorized' } })}`
+    )
+    await expect(authProbe).resolves.toMatchObject({
+      ok: false,
+      error: { code: 'unauthorized' }
+    })
+
+    const error = await sendError
     expect(isRpcDeliveryUnknown(error)).toBe(true)
     client.close()
   })

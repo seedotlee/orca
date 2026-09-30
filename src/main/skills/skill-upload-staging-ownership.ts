@@ -6,12 +6,6 @@ const OWNER_DIRECTORY_PREFIX = 'owner-'
 const OWNER_DIRECTORY_PATTERN =
   /^owner-(\d+)-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i
 const STAGING_ENTRY_SCAN_LIMIT = 64
-const STAGING_REMOVAL_OPTIONS = {
-  recursive: true,
-  force: true,
-  maxRetries: 3,
-  retryDelay: 50
-} as const
 
 export const SKILL_UPLOAD_STAGING_ROOT_NAME = 'remote-uploads-v2'
 
@@ -22,6 +16,7 @@ export type SkillUploadStagingOwnershipOptions = {
 export class SkillUploadStagingOwnership {
   readonly directory: string
   private readonly processIsAlive: (pid: number) => boolean
+  private removal: Promise<void> | null = null
 
   constructor(
     private readonly root: string,
@@ -41,8 +36,18 @@ export class SkillUploadStagingOwnership {
     await mkdir(this.directory, { recursive: true, mode: 0o700 })
   }
 
+  // Callers race this (an in-flight operation and disposal), and a second rmdir of a
+  // delete-pending directory fails with EPERM on Windows, so join one removal instead.
   async remove(): Promise<void> {
-    await rm(this.directory, STAGING_REMOVAL_OPTIONS)
+    const removal = (this.removal ??= rm(this.directory, { recursive: true, force: true }))
+    try {
+      await removal
+    } catch (error) {
+      if (this.removal === removal) {
+        this.removal = null
+      }
+      throw error
+    }
   }
 
   private async cleanupAbandonedOwners(): Promise<void> {
@@ -61,7 +66,7 @@ export class SkillUploadStagingOwnership {
         const candidate = join(this.root, entry.name)
         const stats = await lstat(candidate).catch(() => null)
         if (stats?.isDirectory() && !stats.isSymbolicLink()) {
-          await rm(candidate, STAGING_REMOVAL_OPTIONS)
+          await rm(candidate, { recursive: true, force: true })
         }
       }
     } finally {

@@ -119,6 +119,8 @@ export type PersistedUIState = {
   _antigravityStatusBarDefaultAdded?: boolean
   /** One-shot migration flag for adding the default-on Grok status item. */
   _grokStatusBarDefaultAdded?: boolean
+  /** One-shot migration flag for adding the default-on Cursor status item. */
+  _cursorStatusBarDefaultAdded?: boolean
   statusBarItems: StatusBarItem[]
   statusBarVisible: boolean
   /** Why: this is client-side presentation, not a provider/account or execution-host setting. */
@@ -128,7 +130,7 @@ export type PersistedUIState = {
   /** User template for footer usage text; empty template keeps the built-in rendering. */
   statusBarUsageFormat?: StatusBarUsageFormat
   dismissedUpdateVersion: string | null
-  /** App version that last dismissed the unexpected-sign-out card; null = never. Re-arms on each new version while still signed out. */
+  /** Version when the sign-out notice was seen or dismissed; any value suppresses future appearances. */
   dismissedUnexpectedSignoutVersion?: string | null
   lastUpdateCheckAt: number | null
   /** Dev-only update channel override; absent means the build's own channel. */

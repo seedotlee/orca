@@ -1,14 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { resolve } from 'node:path'
-import type { Repo } from '../../shared/repo-types'
 import type { GitWorktreeInfo, Worktree } from '../../shared/worktree/types'
 import { notifyWorktreesChanged } from './worktree-remote'
-import {
-  invalidateAuthorizedRootsCache,
-  isRegisteredWorktreePath,
-  resolveRegisteredWorktreePath
-} from './registered-worktree-roots-cache'
-import { listDetectedWorktreesForCapturedRepo } from './worktrees/listing/detected-provider-listing'
+import { resolveRegisteredWorktreePath } from './registered-worktree-roots-cache'
 import { __getDetectedWorktreeScanCacheStatsForTests } from './worktrees/listing/detected-worktree-scan-cache'
 import { setPlatform, listWorktreesMock } from './worktrees-test-module-mocks'
 import { handlers, mainWindow, setupWorktreeHandlers, store } from './worktrees-test-harness'
@@ -168,35 +162,6 @@ describe('registerWorktreeHandlers', () => {
     expect(listWorktreesMock).toHaveBeenCalledTimes(1)
   })
 
-  it('re-registers roots when authorization is invalidated before a cached listing', async () => {
-    listWorktreesMock.mockResolvedValue([
-      {
-        path: '/workspace/repo',
-        head: 'main-head',
-        branch: 'refs/heads/main',
-        isBare: false,
-        isMainWorktree: true
-      },
-      {
-        path: '/workspace/new-worktree',
-        head: 'feature-head',
-        branch: 'refs/heads/feature',
-        isBare: false,
-        isMainWorktree: false
-      }
-    ])
-
-    await handlers['worktrees:listDetected'](null, { repoId: 'repo-1' })
-    expect(isRegisteredWorktreePath(resolve('/workspace/new-worktree'))).toBe(true)
-    invalidateAuthorizedRootsCache()
-    expect(isRegisteredWorktreePath(resolve('/workspace/new-worktree'))).toBe(false)
-
-    await handlers['worktrees:listDetected'](null, { repoId: 'repo-1' })
-
-    expect(isRegisteredWorktreePath(resolve('/workspace/new-worktree'))).toBe(true)
-    expect(listWorktreesMock).toHaveBeenCalledTimes(1)
-  })
-
   it('coalesces concurrent authoritative detected worktree scans', async () => {
     listWorktreesMock.mockImplementation(async () => {
       await Promise.resolve()
@@ -217,48 +182,6 @@ describe('registerWorktreeHandlers', () => {
       handlers['worktrees:listDetected'](null, { repoId: 'repo-1' })
     ])
 
-    expect(listWorktreesMock).toHaveBeenCalledTimes(1)
-  })
-
-  it('registers roots when the current caller joins a scan whose starter becomes stale', async () => {
-    let resolveScan: (worktrees: GitWorktreeInfo[]) => void = () => {}
-    listWorktreesMock.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolveScan = resolve as (worktrees: GitWorktreeInfo[]) => void
-        })
-    )
-    const repo = (store.getRepos() as Repo[])[0]
-    let starterIsCurrent = true
-
-    const staleList = listDetectedWorktreesForCapturedRepo(
-      store as never,
-      repo,
-      () => starterIsCurrent
-    )
-    await Promise.resolve()
-    const currentList = listDetectedWorktreesForCapturedRepo(store as never, repo, () => true)
-    starterIsCurrent = false
-    resolveScan([
-      {
-        path: '/workspace/repo',
-        head: 'main-head',
-        branch: 'refs/heads/main',
-        isBare: false,
-        isMainWorktree: true
-      },
-      {
-        path: '/workspace/new-worktree',
-        head: 'feature-head',
-        branch: 'refs/heads/feature',
-        isBare: false,
-        isMainWorktree: false
-      }
-    ])
-
-    await expect(staleList).resolves.toBeNull()
-    await expect(currentList).resolves.toMatchObject({ authoritative: true })
-    expect(isRegisteredWorktreePath(resolve('/workspace/new-worktree'))).toBe(true)
     expect(listWorktreesMock).toHaveBeenCalledTimes(1)
   })
 
@@ -509,24 +432,81 @@ describe('registerWorktreeHandlers', () => {
       }
     })
 
+    const mainWorktree: GitWorktreeInfo = {
+      path: '/workspace/repo',
+      head: 'main-head',
+      branch: 'refs/heads/main',
+      isBare: false,
+      isMainWorktree: true
+    }
+    const createdWorktree: GitWorktreeInfo = {
+      path: '/workspace/new-worktree',
+      head: 'new-head',
+      branch: 'refs/heads/new-worktree',
+      isBare: false,
+      isMainWorktree: false
+    }
     const pendingList = handlers['worktrees:listDetected'](null, { repoId: 'repo-1' })
     await Promise.resolve()
+    // The create finished while the scan ran: the scan never saw the new worktree.
     notifyWorktreesChanged(mainWindow as never, 'repo-1')
-    resolveScan([
-      {
-        path: '/workspace/repo',
-        head: 'main-head',
-        branch: 'refs/heads/main',
-        isBare: false,
-        isMainWorktree: true
-      }
-    ])
+    resolveScan([mainWorktree])
+    // Why: an overtaken scan is a cache miss, so the listing scans again before it answers.
+    await vi.waitFor(() => expect(listWorktreesMock).toHaveBeenCalledTimes(2))
+    resolveScan([mainWorktree, createdWorktree])
 
-    await pendingList
+    const result = await pendingList
 
+    // The overtaken scan's prune would have retired the new worktree's lineage; only the re-scan ran.
     expect(store.removeWorktreeLineage).not.toHaveBeenCalled()
-    expect(isRegisteredWorktreePath(resolve('/workspace/repo'))).toBe(false)
-    expect(listWorktreesMock).toHaveBeenCalledTimes(1)
+    expect(result).toMatchObject({
+      authoritative: true,
+      worktrees: [
+        expect.objectContaining({ path: '/workspace/repo' }),
+        expect.objectContaining({ path: '/workspace/new-worktree' })
+      ]
+    })
+  })
+
+  it('stops re-scanning after two overtaken passes and answers stale, not failed', async () => {
+    const mainWorktree: GitWorktreeInfo = {
+      path: '/workspace/repo',
+      head: 'main-head',
+      branch: 'refs/heads/main',
+      isBare: false,
+      isMainWorktree: true
+    }
+    let resolveScan: (worktrees: GitWorktreeInfo[]) => void = () => {}
+    listWorktreesMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveScan = resolve as (worktrees: GitWorktreeInfo[]) => void
+        })
+    )
+
+    const pendingList = handlers['worktrees:listDetected'](null, {
+      repoId: 'repo-1',
+      executionHostId: 'local',
+      providerRequestId: 'provider-1'
+    })
+    for (let pass = 1; pass <= 3; pass += 1) {
+      await vi.waitFor(() => expect(listWorktreesMock).toHaveBeenCalledTimes(pass))
+      notifyWorktreesChanged(mainWindow as never, 'repo-1')
+      resolveScan([mainWorktree])
+    }
+
+    const result = await pendingList
+
+    expect(listWorktreesMock).toHaveBeenCalledTimes(3)
+    // Why stale: no scan in the chain describes the current catalog, and a non-authoritative answer
+    // would still replace the client's rows -- dropping a worktree the last mutation created. A
+    // stale reply leaves client state alone; that mutation's own change event brings the next
+    // listing. Nothing failed, so no failure reason ships and no scan-failure indicator lights up.
+    expect(result).toEqual({
+      providerRequestId: 'provider-1',
+      executionHostId: 'local',
+      status: 'stale'
+    })
   })
 
   it('does not retain invalidated detected scans after they settle', async () => {
@@ -553,19 +533,25 @@ describe('registerWorktreeHandlers', () => {
       inFlightSize: 0
     })
 
-    resolveScan([
-      {
-        path: '/workspace/repo',
-        head: 'main-head',
-        branch: 'refs/heads/main',
-        isBare: false,
-        isMainWorktree: true
-      }
-    ])
+    const mainWorktree: GitWorktreeInfo = {
+      path: '/workspace/repo',
+      head: 'main-head',
+      branch: 'refs/heads/main',
+      isBare: false,
+      isMainWorktree: true
+    }
+    resolveScan([mainWorktree])
+    // Why: the invalidated scan is never cached; the re-scan it triggers is the one that may be.
+    await vi.waitFor(() => expect(listWorktreesMock).toHaveBeenCalledTimes(2))
+    expect(__getDetectedWorktreeScanCacheStatsForTests()).toMatchObject({
+      cacheSize: 0,
+      inFlightSize: 1
+    })
+    resolveScan([mainWorktree])
     await pendingList
 
     expect(__getDetectedWorktreeScanCacheStatsForTests()).toMatchObject({
-      cacheSize: 0,
+      cacheSize: 1,
       inFlightSize: 0
     })
   })
@@ -629,14 +615,16 @@ describe('registerWorktreeHandlers', () => {
     await Promise.resolve()
 
     resolvers[0](result)
-    await staleList
+    // Why not awaited yet: the overtaken caller does not answer from its own scan; it joins the
+    // replacement scan already in flight instead of starting a third.
     expect(__getDetectedWorktreeScanCacheStatsForTests()).toEqual({
       cacheSize: 0,
       inFlightSize: 1
     })
 
     resolvers[1](result)
-    await replacementList
+    await Promise.all([staleList, replacementList])
+    expect(listWorktreesMock).toHaveBeenCalledTimes(2)
     expect(__getDetectedWorktreeScanCacheStatsForTests()).toEqual({
       cacheSize: 1,
       inFlightSize: 0

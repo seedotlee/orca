@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { execFileSync } from 'node:child_process'
 import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
 
@@ -121,6 +122,7 @@ export async function createDraftRelease({
   repo,
   tag,
   token,
+  targetCommitish,
   fetchImpl = fetch,
   log = console.log
 }) {
@@ -132,6 +134,9 @@ export async function createDraftRelease({
   }
   if (!token) {
     throw new Error('token is required')
+  }
+  if (!targetCommitish) {
+    throw new Error('targetCommitish is required')
   }
 
   const releases = await fetchRepoReleases(repo, token, fetchImpl)
@@ -227,19 +232,33 @@ export async function createDraftRelease({
       return
     }
   } else {
-    // Why: GitHub's generated release notes can exceed the release body API
-    // limit, so create with a bounded body. Omit target_commitish because the
-    // release-cut tag already exists and GitHub rejects the tag name there.
-    await githubJson(fetchImpl, `https://api.github.com/repos/${repo}/releases`, token, {
-      method: 'POST',
-      body: JSON.stringify({
-        tag_name: tag,
-        name,
-        body,
-        draft: true,
-        prerelease
-      })
-    })
+    // Why target_commitish is the tag commit, not omitted: GitHub defaults it
+    // to the repo default branch. A release-cut tag is a detached bump commit,
+    // so that default creates an untagged draft. electron-builder then misses
+    // it by tag name and `--publish always` opens a public release with the
+    // first platform's assets, which /releases/latest serves without the exe.
+    const createdRelease = await githubJson(
+      fetchImpl,
+      `https://api.github.com/repos/${repo}/releases`,
+      token,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          tag_name: tag,
+          target_commitish: targetCommitish,
+          name,
+          body,
+          draft: true,
+          prerelease,
+          make_latest: 'false'
+        })
+      }
+    )
+    if (createdRelease?.draft !== true || createdRelease?.tag_name !== tag) {
+      throw new Error(
+        `GitHub created ${createdRelease?.draft ? 'draft' : 'published'} release ${createdRelease?.tag_name ?? '<missing>'} instead of draft ${tag}`
+      )
+    }
   }
 
   if (generatedBody.length !== body.length) {
@@ -257,7 +276,8 @@ async function main() {
   const tag = process.argv[2]
   const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
   const repo = process.env.GITHUB_REPOSITORY || DEFAULT_RELEASE_REPO
-  await createDraftRelease({ repo, tag, token })
+  const targetCommitish = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
+  await createDraftRelease({ repo, tag, token, targetCommitish })
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

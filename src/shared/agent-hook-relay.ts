@@ -41,6 +41,7 @@ const AGENT_HOOK_SOURCES = [
   'antigravity',
   'amp',
   'opencode',
+  'opencode2',
   'mimo-code',
   'cursor',
   'pi',
@@ -52,7 +53,9 @@ const AGENT_HOOK_SOURCES = [
   'copilot',
   'hermes',
   'devin',
-  'kimi'
+  'kimi',
+  'muse',
+  'zcode'
 ] as const
 
 export type AgentHookSource = (typeof AGENT_HOOK_SOURCES)[number]
@@ -217,6 +220,8 @@ export type AgentHookInstallManagedHooksParams = {
   hostKeyFingerprint?: string
   /** Positively detected and enabled agents allowed to mutate remote config. */
   agents: readonly AgentHookTarget[]
+  /** Execution-host Claude version; absent means retain the legacy hook set. */
+  claudeVersion?: string
 }
 
 /** Feature-flag env var. Read once at process start by Orca and the relay.

@@ -17,6 +17,8 @@ import { detectExplicitIdleStatusFromTitle } from './terminal-wait-detection'
  *
  *   1. POSITIVE — the agent states it is ready: an explicit idle marker in its own
  *      title, or a known ready-prompt body.
+ *   1b. QUIET READY SCREEN — Muse and an idle Codex title no rest signal, so their
+ *      ready-screen body stands in for the positive evidence, believed only once quiet.
  *   2. VETO — a fresh first-party agent status (OSC 9999) saying working/blocked/
  *      waiting. The agent's own account of itself outranks anything inferred.
  *   3. ABSENCE — a name-only title, or a quiet non-shell foreground process. A last
@@ -119,12 +121,44 @@ export type TuiIdleSatisfactionInput = {
    *  (~11us and a multi-KB string on a full tail); the title check below usually answers
    *  first, and then none of that has to happen at all. */
   readPositiveBodyEvidence: () => boolean
+  /** Tier 1b body evidence: a Muse or Codex ready screen. Thunk for the same reason as above. */
+  readQuietReadyBodyEvidence: () => boolean
   agent: TuiAgent | null | undefined
   firstPartyStatus: FirstPartyAgentStatus
   quiescenceMs: number
 }
 
-/** The one place the three tiers are combined; every satisfaction site routes here. */
+const QUIET_READY_SCREEN_AGENTS: ReadonlySet<TuiAgent> = new Set(['muse', 'codex'])
+
+/**
+ * Tier 1b: a ready screen in the body, believed only once the stream has gone quiet.
+ *
+ * Muse's OSC title is the bare cwd and never changes, and an idle Codex titles its pane with
+ * the cwd (plus a thread name) and no agent name, so neither the explicit-idle nor the
+ * sustained-title lane can fire. The ready screen proves the TUI is up; the quiescence
+ * demand keeps a mid-turn streaming pane from satisfying, mirroring the tier-3 lane's
+ * positive-evidence-plus-quiet shape. Scoped to those agents and agent-unknown panes (which
+ * read only Muse's screen): another agent's scrollback quoting them must not settle its wait.
+ */
+export function hasQuietReadyScreen(
+  record: TuiIdleEvidenceRecord,
+  agent: TuiAgent | null | undefined,
+  readBodyEvidence: () => boolean,
+  quiescenceMs: number
+): boolean {
+  if (agent && !QUIET_READY_SCREEN_AGENTS.has(agent)) {
+    return false
+  }
+  // Why: same rule as the tier-3 lane — without an output clock there is no
+  // corroboration available, so hold out instead of settling.
+  if (record.lastOutputAt === null || Date.now() - record.lastOutputAt < quiescenceMs) {
+    return false
+  }
+  // Why last: a streaming pane never pays for the screen projection.
+  return readBodyEvidence()
+}
+
+/** The one place the tiers are combined; every satisfaction site routes here. */
 export function isTuiIdleSatisfied(input: TuiIdleSatisfactionInput): boolean {
   // Why the title before the body: both are tier 1, so either settles, but the title is a
   // memoized lookup and the body is a fresh multi-KB scan. Same verdict, cheaper order.
@@ -133,6 +167,17 @@ export function isTuiIdleSatisfied(input: TuiIdleSatisfactionInput): boolean {
   }
   if (hasFreshWorkingFirstPartyStatus(input.firstPartyStatus)) {
     return false
+  }
+  // Why after the veto: a first-party working account outranks inferred body evidence.
+  if (
+    hasQuietReadyScreen(
+      input.record,
+      input.agent,
+      input.readQuietReadyBodyEvidence,
+      input.quiescenceMs
+    )
+  ) {
+    return true
   }
   return hasSustainedTitleIdle(input.record, input.agent, input.quiescenceMs)
 }

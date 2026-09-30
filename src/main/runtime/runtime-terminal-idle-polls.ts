@@ -2,7 +2,8 @@ import { isShellProcess, type AgentStatus } from '../../shared/agent-detection'
 import type { RuntimeTerminalWait } from '../../shared/runtime-types'
 import {
   detectTerminalWaitBlockedReason,
-  isKnownReadyPromptPreview
+  isKnownReadyPromptBody,
+  isQuietReadyScreenBody
 } from './terminal-wait-detection'
 import {
   buildPtyTerminalWaitBlockedResult,
@@ -17,6 +18,19 @@ import {
   type FirstPartyAgentStatus
 } from './tui-idle-evidence'
 import type { TuiAgent } from '../../shared/tui-agent'
+
+/**
+ * Why null counts as quiet: a record with no output timestamp has produced nothing the
+ * RUNTIME OBSERVED since it was created. That is not the same as silence — the reachable
+ * case is a daemon-hosted pane whose bytes never reach the runtime, which may still be
+ * streaming. The trade is deliberate: "never settles" becomes "settles uncorroborated",
+ * the caller keeps its timeout, and delivery cannot reach this lane. Reading it as `0ms since output`
+ * inverted that — `0 >= quiescenceMs` is false forever, so an adopted pane that never
+ * emitted could not settle no matter how long the caller waited.
+ */
+function isQuietForQuiescence(lastOutputAt: number | null, quiescenceMs: number): boolean {
+  return lastOutputAt === null ? true : Date.now() - lastOutputAt >= quiescenceMs
+}
 import type { TerminalWaiter } from './runtime-terminal-contracts'
 import type { RuntimeLeafRecord, RuntimePtyWorktreeRecord } from './runtime-terminal-state-records'
 
@@ -28,6 +42,7 @@ type RuntimeTerminalIdlePollDependencies = {
   getAdoptedPtyIdleStatus(pty: RuntimePtyWorktreeRecord): AgentStatus | null
   getPaneAgent(ptyId: string | null | undefined): TuiAgent | null
   getFirstPartyAgentStatus(ptyId: string | null | undefined): FirstPartyAgentStatus
+  readScreenLines(ptyId: string | null | undefined): readonly string[] | null
   /** Re-read the record the waiter registered against; see `liveLeaf` below. */
   getLiveLeaf(leaf: RuntimeLeafRecord): RuntimeLeafRecord
   resolve(waiter: TerminalWaiter, result: RuntimeTerminalWait): void
@@ -114,7 +129,10 @@ export class RuntimeTerminalIdlePolls {
         isTuiIdleSatisfied({
           record: leaf,
           rendererTitle: leaf.paneTitle ?? this.deps.getTabTitle(leaf.tabId),
-          readPositiveBodyEvidence: () => isKnownReadyPromptPreview(waitText),
+          readPositiveBodyEvidence: () =>
+            isKnownReadyPromptBody(waitText, agent, () => this.deps.readScreenLines(leaf.ptyId)),
+          readQuietReadyBodyEvidence: () =>
+            isQuietReadyScreenBody(waitText, agent, () => this.deps.readScreenLines(leaf.ptyId)),
           agent,
           firstPartyStatus: this.deps.getFirstPartyAgentStatus(leaf.ptyId),
           quiescenceMs: this.deps.quiescenceMs
@@ -141,7 +159,7 @@ export class RuntimeTerminalIdlePolls {
         if (
           foreground &&
           !isShellProcess(foreground) &&
-          (live.lastOutputAt ? Date.now() - live.lastOutputAt : 0) >= this.deps.quiescenceMs
+          isQuietForQuiescence(live.lastOutputAt, this.deps.quiescenceMs)
         ) {
           this.stop(entry)
           this.deps.resolve(waiter, buildTerminalWaitResult(waiter.handle, 'tui-idle', live))
@@ -181,7 +199,9 @@ export class RuntimeTerminalIdlePolls {
           record: pty,
           readPositiveBodyEvidence: () =>
             this.deps.getAdoptedPtyIdleStatus(pty) === 'idle' ||
-            isKnownReadyPromptPreview(waitText),
+            isKnownReadyPromptBody(waitText, agent, () => this.deps.readScreenLines(pty.ptyId)),
+          readQuietReadyBodyEvidence: () =>
+            isQuietReadyScreenBody(waitText, agent, () => this.deps.readScreenLines(pty.ptyId)),
           agent,
           firstPartyStatus: this.deps.getFirstPartyAgentStatus(pty.ptyId),
           quiescenceMs: this.deps.quiescenceMs
@@ -206,7 +226,7 @@ export class RuntimeTerminalIdlePolls {
         if (
           foreground &&
           !isShellProcess(foreground) &&
-          (pty.lastOutputAt ? Date.now() - pty.lastOutputAt : 0) >= this.deps.quiescenceMs
+          isQuietForQuiescence(pty.lastOutputAt, this.deps.quiescenceMs)
         ) {
           this.stop(entry)
           this.deps.resolve(waiter, buildPtyTerminalWaitResult(waiter.handle, 'tui-idle', pty))

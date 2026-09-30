@@ -347,6 +347,7 @@ export default function CombinedDiffViewer({
           <CombinedDiffFileTree
             mode={entrySet.treeMode}
             worktreePath={file.filePath}
+            sourceWorkspaceId={file.worktreeId}
             entries={entrySet.entries}
             sectionIndexByKey={treeNavigation.sectionIndexByKey}
             activeSectionKey={treeNavigation.activeTreeSectionKey}

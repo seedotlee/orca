@@ -66,7 +66,12 @@ type JsonRpcResponse = {
 }
 
 export type CodexAppServerRpc = {
-  request: (method: string, params?: Record<string, unknown>) => Promise<unknown>
+  /** `timeoutMs` bounds one call inside the session deadline, so a caller can drop it and go on. */
+  request: (
+    method: string,
+    params?: Record<string, unknown>,
+    options?: { timeoutMs?: number }
+  ) => Promise<unknown>
   notify: (method: string, params?: Record<string, unknown>) => void
 }
 
@@ -207,7 +212,11 @@ export async function runCodexAppServerSession<T>(
     }
   }
 
-  async function requestRpc(method: string, params?: Record<string, unknown>): Promise<unknown> {
+  async function requestRpc(
+    method: string,
+    params?: Record<string, unknown>,
+    options: { timeoutMs?: number } = {}
+  ): Promise<unknown> {
     if (spawnError) {
       throw spawnError
     }
@@ -218,8 +227,18 @@ export async function runCodexAppServerSession<T>(
       throw buildEarlyExitError()
     }
     const id = nextRequestId++
+    let requestTimer: ReturnType<typeof setTimeout> | undefined
     const response = await new Promise<JsonRpcResponse>((resolve, reject) => {
       pending.set(id, { resolve, reject })
+      if (options.timeoutMs !== undefined) {
+        const { timeoutMs } = options
+        requestTimer = setTimeout(() => {
+          pending.delete(id)
+          reject(
+            new CodexAppServerTimeoutError(`codex app-server ${method} exceeded ${timeoutMs}ms`)
+          )
+        }, timeoutMs)
+      }
       const payload: Record<string, unknown> = { method, id }
       if (params !== undefined) {
         payload.params = params
@@ -230,7 +249,7 @@ export async function runCodexAppServerSession<T>(
         pending.delete(id)
         reject(error instanceof Error ? error : new Error(String(error)))
       }
-    })
+    }).finally(() => clearTimeout(requestTimer))
     if (response.error) {
       if (isCodexMethodNotFoundError(response.error)) {
         throw new CodexAppServerUnsupportedError(

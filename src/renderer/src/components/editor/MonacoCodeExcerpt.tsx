@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { monaco } from '@/lib/monaco-setup'
 import { computeEditorFontSize, resolveEditorFontFamily } from '@/lib/editor-font-zoom'
-import { useMonacoEditorTheme } from './use-monaco-editor-theme'
 import { useAppStore } from '@/store'
 import { cn } from '@/lib/utils'
+import { useMonacoEditorTheme } from './use-monaco-editor-theme'
 
 let pythonLanguageRegistrationPromise: Promise<void> | null = null
 
@@ -30,33 +30,14 @@ async function ensureColorizationLanguage(language: string): Promise<void> {
   await pythonLanguageRegistrationPromise
 }
 
-type MonacoCodeExcerptProps = {
-  lines: string[]
-  firstLineNumber: number
-  highlightedStartLine: number
-  highlightedEndLine: number
-  language: string
-}
-
-/** Read-only Monaco snippet showing a few lines of a file with a highlighted range. */
-export default function MonacoCodeExcerpt({
-  lines,
-  firstLineNumber,
-  highlightedStartLine,
-  highlightedEndLine,
-  language
-}: MonacoCodeExcerptProps): React.JSX.Element {
-  const settings = useAppStore((s) => s.settings)
-  const editorFontZoomLevel = useAppStore((s) => s.editorFontZoomLevel)
-  const editorFontSize = computeEditorFontSize(
-    settings?.terminalFontSize ?? 13,
-    editorFontZoomLevel
-  )
-  const fontFamily = resolveEditorFontFamily(settings)
-  useMonacoEditorTheme()
+/** Monaco token HTML per line; loads lazy tokenizers (e.g. Python) before colorizing. */
+export function useMonacoColorizedLines(lines: string[], language: string): string[] {
+  // Why: applies the terminal-derived Monaco theme (match-terminal mode) instead of plain vs/vs-dark.
+  const { theme } = useMonacoEditorTheme()
   const code = useMemo(() => lines.join('\n'), [lines])
   const [htmlLines, setHtmlLines] = useState<string[]>(() => lines.map(() => ''))
 
+  // Why: colorize emits theme-specific token classes, so a theme switch must re-colorize.
   useEffect(() => {
     if (lines.length === 0) {
       setHtmlLines([])
@@ -81,7 +62,34 @@ export default function MonacoCodeExcerpt({
     return () => {
       cancelled = true
     }
-  }, [code, language, lines])
+  }, [code, language, lines, theme])
+
+  return htmlLines
+}
+
+type MonacoCodeExcerptProps = {
+  lines: string[]
+  firstLineNumber: number
+  highlightedStartLine: number
+  highlightedEndLine: number
+  language: string
+}
+
+export default function MonacoCodeExcerpt({
+  lines,
+  firstLineNumber,
+  highlightedStartLine,
+  highlightedEndLine,
+  language
+}: MonacoCodeExcerptProps): React.JSX.Element {
+  const settings = useAppStore((s) => s.settings)
+  const editorFontZoomLevel = useAppStore((s) => s.editorFontZoomLevel)
+  const editorFontSize = computeEditorFontSize(
+    settings?.terminalFontSize ?? 13,
+    editorFontZoomLevel
+  )
+  const fontFamily = resolveEditorFontFamily(settings)
+  const htmlLines = useMonacoColorizedLines(lines, language)
 
   return (
     <div

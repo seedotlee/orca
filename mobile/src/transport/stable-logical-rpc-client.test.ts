@@ -90,6 +90,7 @@ describe('stable logical RPC client', () => {
     const nextSession = new FakeSession('connecting')
     const pending = deferred<RpcResponse>()
     oldSession.sendRequest.mockReturnValue(pending.promise)
+    oldSession.close.mockImplementation(() => pending.reject(new Error('Client closed')))
     nextSession.sendRequest.mockResolvedValue(success('next'))
     const client = createStableLogicalRpcClient(oldSession, 'lan')
     const stream = vi.fn()
@@ -453,5 +454,52 @@ describe('stable logical RPC client', () => {
     expect(oldSession.close).not.toHaveBeenCalled()
     expect(client.getActivePath()).toBe('lan')
     expect(client.getGeneration()).toBe(1)
+  })
+})
+
+describe('stable logical RPC client subscription fencing', () => {
+  /** A physical session with an inert disposer, so only the logical guard can fence a late event. */
+  function leakySession() {
+    const session = new FakeSession('connected')
+    const listeners = new Set<(result: unknown) => void>()
+    session.subscribe.mockImplementation((_method, _params, listener) => {
+      listeners.add(listener)
+      return () => {}
+    })
+    return {
+      session,
+      emit(value: unknown): void {
+        for (const listener of listeners) {
+          listener(value)
+        }
+      }
+    }
+  }
+
+  it('delivers a stream event to a live subscription', () => {
+    const physical = leakySession()
+    const client = createStableLogicalRpcClient(physical.session, 'lan')
+    const listener = vi.fn()
+    client.subscribe('notifications.subscribe', { includeDesktopSuppressed: true }, listener)
+
+    physical.emit({ type: 'ready', subscriptionId: 'sub-1' })
+
+    expect(listener).toHaveBeenCalledExactlyOnceWith({ type: 'ready', subscriptionId: 'sub-1' })
+  })
+
+  it('drops a stream event that lands after the caller unsubscribed', () => {
+    const physical = leakySession()
+    const client = createStableLogicalRpcClient(physical.session, 'lan')
+    const listener = vi.fn()
+    const unsubscribe = client.subscribe(
+      'notifications.subscribe',
+      { includeDesktopSuppressed: true },
+      listener
+    )
+
+    unsubscribe()
+    physical.emit({ type: 'ready', subscriptionId: 'sub-1' })
+
+    expect(listener).not.toHaveBeenCalled()
   })
 })

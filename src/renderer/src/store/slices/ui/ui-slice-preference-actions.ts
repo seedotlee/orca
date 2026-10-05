@@ -20,10 +20,7 @@ import {
   DEFAULT_STATUS_BAR_USAGE_MODE,
   normalizeStatusBarUsageMode
 } from '../../../../../shared/status-bar-usage-mode'
-import {
-  DEFAULT_STATUS_BAR_USAGE_FORMAT,
-  normalizeStatusBarUsageFormat
-} from '../../../../../shared/status-bar-usage-format'
+import { createStatusBarUsageFormatActions } from './ui-slice-status-bar-usage-format-actions'
 import type { WorkspaceHostScope } from '../../../../../shared/ui-chrome-types'
 import {
   normalizeExecutionHostOrder,
@@ -42,6 +39,7 @@ import {
   WORKSPACE_BOARD_COLUMN_WIDTH_DEFAULT
 } from '../../../../../shared/workspace-statuses'
 
+/** Builds preference defaults and setters for the UI slice, leaving durable writes to the persistence layer. */
 export function createUiPreferenceActions(set: UISliceSet, get: UISliceGet): Partial<UISlice> {
   return {
     sidebarBody: 'workspaces',
@@ -120,6 +118,19 @@ export function createUiPreferenceActions(set: UISliceSet, get: UISliceGet): Par
     alwaysShowDefaultBranchWorkspace: true,
     setAlwaysShowDefaultBranchWorkspace: (v) => set({ alwaysShowDefaultBranchWorkspace: v }),
 
+    explorerDisplayRootByWorktree: {},
+    /** Stores an explicit root choice while rejecting empty IDs and prototype-related record keys. */
+    setExplorerDisplayRootForWorktree: (worktreeId, value) => {
+      if (!worktreeId || ['__proto__', 'constructor', 'prototype'].includes(worktreeId)) {
+        return
+      }
+      set((s) => ({
+        explorerDisplayRootByWorktree: {
+          ...s.explorerDisplayRootByWorktree,
+          [worktreeId]: value
+        }
+      }))
+    },
     showDotfilesByWorktree: {},
     setShowDotfilesForWorktree: (worktreeId, showDotfiles) =>
       set((s) => {
@@ -305,12 +316,6 @@ export function createUiPreferenceActions(set: UISliceSet, get: UISliceGet): Par
       window.api.ui.set({ statusBarUsageMode: normalized }).catch(console.error)
       set({ statusBarUsageMode: normalized })
     },
-    statusBarUsageFormat: { ...DEFAULT_STATUS_BAR_USAGE_FORMAT },
-    /** Persists the footer usage template and mirrors it into the store. */
-    setStatusBarUsageFormat: (format) => {
-      const normalized = normalizeStatusBarUsageFormat(format)
-      window.api.ui.set({ statusBarUsageFormat: normalized }).catch(console.error)
-      set({ statusBarUsageFormat: normalized })
-    }
+    ...createStatusBarUsageFormatActions(set)
   }
 }

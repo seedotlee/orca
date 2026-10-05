@@ -155,6 +155,8 @@ function getProviderLetter(provider: ProviderRateLimits['provider']): string {
       return 'R'
     case 'cursor':
       return 'U'
+    case 'zcode':
+      return 'Z'
     case 'codex':
       return 'X'
   }
@@ -167,9 +169,16 @@ function getProviderLetter(provider: ProviderRateLimits['provider']): string {
 // Why: Gemini exposes extra experimental buckets that made the pre-existing verbose footer noisy.
 const STATUS_BAR_BUCKET_NAMES = new Set(['Flash', 'Pro', '1.5 Pro'])
 
-// Why: the allowlist above is Gemini's. Cursor's pools are its whole meter — filtering
-// them out leaves a signed-in account with an icon and no number at all.
-function isVisibleStatusBarBucket(name: string): boolean {
+/**
+ * Why Antigravity is matched by provider and not by name: its pools are one per model group, and the
+ * group names come from the account's own tier ("Gemini Models", "Claude and GPT models" today), so
+ * there is no list to allow. Cursor stays name-matched on purpose — a pool Orca does not recognise
+ * is filtered so the segment can fall back to the plan total instead of showing an unlabelled row.
+ */
+function isVisibleStatusBarBucket(name: string, provider: ProviderRateLimits['provider']): boolean {
+  if (provider === 'antigravity') {
+    return true
+  }
   return STATUS_BAR_BUCKET_NAMES.has(name) || isCursorUsageBucket(name)
 }
 
@@ -198,10 +207,15 @@ function VerboseProviderUsage({
     )
   }
   if (p.buckets && p.buckets.length > 0) {
-    const visibleBuckets = p.buckets.filter((bucket) => isVisibleStatusBarBucket(bucket.name))
+    const visibleBuckets = p.buckets.filter((bucket) =>
+      isVisibleStatusBarBucket(bucket.name, p.provider)
+    )
     // Why: a provider whose buckets are all filtered out still has a headline
     // window worth showing rather than rendering an empty segment.
-    const fallbackWindow = p.session ?? p.monthly ?? null
+    // Why weekly is in the chain: a tier metered weekly only (Antigravity reports no 5h pool on
+    // some tiers) has no session window, and omitting weekly rendered an empty segment for an
+    // account that does have a limit worth showing.
+    const fallbackWindow = p.session ?? p.monthly ?? p.weekly ?? null
     return (
       <>
         {visibleBuckets.map((bucket, index) => (

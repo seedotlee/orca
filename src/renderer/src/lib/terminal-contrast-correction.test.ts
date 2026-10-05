@@ -8,7 +8,7 @@ import {
   normalizeTerminalMinimumContrastRatio,
   resolveTerminalMinimumContrastRatio
 } from './terminal-contrast-correction'
-import { TERMINAL_THEME_CATALOG } from './terminal-themes'
+import { TERMINAL_THEME_CATALOG } from '../../../shared/terminal-themes'
 import { resolveTerminalTextContrastRatio } from './terminal-title-contrast'
 
 /** sRGB 0–255 channel → linear-light value per WCAG 2.x. */

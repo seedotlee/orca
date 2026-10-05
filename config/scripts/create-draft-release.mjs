@@ -10,7 +10,7 @@ const { githubOwner, githubRepo } = createRequire(import.meta.url)(
 const DEFAULT_RELEASE_REPO = `${githubOwner}/${githubRepo}`
 
 const API_VERSION = '2022-11-28'
-const MAX_RELEASE_BODY_LENGTH = 120_000
+export const MAX_RELEASE_BODY_LENGTH = 120_000
 const TRUNCATION_NOTICE =
   '\n\n---\nRelease notes were truncated because GitHub release bodies are limited to 125,000 characters.'
 const DESKTOP_RELEASE_TAG_PATTERN = /^v(\d+)\.(\d+)\.(\d+)(?:-rc\.(\d+))?$/

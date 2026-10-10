@@ -15,20 +15,20 @@ import {
 import { useAvailableStatusBarToggles } from '../status-bar/use-available-status-bar-toggles'
 import {
   getLayoutEntries,
+  getFollowSymlinkedDirectoriesEntry,
   getSidebarEntries,
   getStatusBarToggles,
   getUsagePercentageDisplayEntry
 } from './appearance-search'
 import { USAGE_PERCENTAGE_DISPLAY_SETTING_ID } from './appearance-usage-percentage-search'
 import { getStatusBarUsageFormatEntry } from './appearance-status-bar-usage-format-search'
-import { StatusBarUsageFormatSetting } from './StatusBarUsageFormatSetting'
+import { StatusBarUsageFormatSearchableSetting } from './StatusBarUsageFormatSetting'
 import { LeftSidebarAppearanceSetting } from './LeftSidebarAppearanceSetting'
-import { WorkspaceChromeAppearanceSetting } from './WorkspaceChromeAppearanceSetting'
+import { WorkspaceChromeAppearanceSearchableSetting } from './WorkspaceChromeAppearanceSetting'
 import {
   getLeftSidebarAppearanceEntry,
   getShowPinnedWorktreesInGroupsEntry,
-  getWorkspaceCardLayoutEntry,
-  getWorkspaceChromeAppearanceEntry
+  getWorkspaceCardLayoutEntry
 } from './appearance-sidebar-search'
 import { translate } from '@/i18n/i18n'
 import { matchesSettingsSearch, normalizeSettingsSearchQuery } from './settings-search'
@@ -81,13 +81,11 @@ export function AppearanceWindowSidebarSection({
   const visibleStatusBarToggles = useAvailableStatusBarToggles(getStatusBarToggles())
   const usagePercentageDisplayEntry = getUsagePercentageDisplayEntry()
   const statusBarUsageFormatEntry = getStatusBarUsageFormatEntry()
-  const statusBarUsageFormat = useAppStore((state) => state.statusBarUsageFormat)
-  const setStatusBarUsageFormat = useAppStore((state) => state.setStatusBarUsageFormat)
   const leftSidebarAppearanceEntry = getLeftSidebarAppearanceEntry()
-  const workspaceChromeAppearanceEntry = getWorkspaceChromeAppearanceEntry()
   const sidebarEntries = getSidebarEntries()
   const workspaceCardLayoutEntry = getWorkspaceCardLayoutEntry()
   const layoutEntries = getLayoutEntries()
+  const followSymlinkEntry = getFollowSymlinkedDirectoriesEntry()
   const statusBarTitle = translate(
     'auto.components.settings.AppearancePane.3e4175e5c6',
     'Status Bar'
@@ -135,14 +133,11 @@ export function AppearanceWindowSidebarSection({
           <LeftSidebarAppearanceSetting settings={settings} updateSettings={updateSettings} />
         </SearchableSetting>
 
-        <SearchableSetting
-          title={workspaceChromeAppearanceEntry.title}
-          description={workspaceChromeAppearanceEntry.description}
-          keywords={workspaceChromeAppearanceEntry.keywords}
+        <WorkspaceChromeAppearanceSearchableSetting
+          settings={settings}
+          updateSettings={updateSettings}
           forceVisible={forceVisiblePrimary}
-        >
-          <WorkspaceChromeAppearanceSetting settings={settings} updateSettings={updateSettings} />
-        </SearchableSetting>
+        />
 
         <SearchableSetting
           title={statusBarTitle}
@@ -187,17 +182,7 @@ export function AppearanceWindowSidebarSection({
                 />
               </SearchableSetting>
 
-              <SearchableSetting
-                title={statusBarUsageFormatEntry.title}
-                description={statusBarUsageFormatEntry.description}
-                keywords={statusBarUsageFormatEntry.keywords}
-                className="space-y-2"
-              >
-                <StatusBarUsageFormatSetting
-                  format={statusBarUsageFormat}
-                  onChange={setStatusBarUsageFormat}
-                />
-              </SearchableSetting>
+              <StatusBarUsageFormatSearchableSetting />
 
               {visibleStatusBarToggles.map((toggle) => {
                 const enabled = statusBarItems.includes(toggle.id)
@@ -406,6 +391,18 @@ export function AppearanceWindowSidebarSection({
                       onChange={() =>
                         updateSettings({
                           showGitIgnoredFiles: !(settings.showGitIgnoredFiles ?? true)
+                        })
+                      }
+                    />
+                  </SearchableSetting>
+                  <SearchableSetting {...followSymlinkEntry}>
+                    <SettingsSwitchRow
+                      label={followSymlinkEntry.title}
+                      description={followSymlinkEntry.description}
+                      checked={settings.followSymlinkedDirectories ?? false}
+                      onChange={() =>
+                        updateSettings({
+                          followSymlinkedDirectories: !settings.followSymlinkedDirectories
                         })
                       }
                     />

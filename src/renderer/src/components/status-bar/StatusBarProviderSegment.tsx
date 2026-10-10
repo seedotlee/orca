@@ -6,6 +6,8 @@ import {
   type UsagePercentageDisplay
 } from '../../../../shared/usage-percentage-display'
 import type { StatusBarUsageMode } from '../../../../shared/status-bar-usage-mode'
+import { formatCurrencyAmount } from '../../../../shared/currency-format'
+import { formatCreditCount } from '../../../../shared/credit-count-format'
 import {
   ProviderIcon,
   USAGE_URGENT_PERCENT,
@@ -14,7 +16,7 @@ import {
   getProviderDisplayName,
   getProviderUsageStatusLabel
 } from './tooltip'
-import { getTightestUsageSection } from './UsageRosterPanel'
+import { getTightestUsageSection, getUsageHeadlineSection } from './UsageRosterPanel'
 import { formatRateLimitWindowChipLabel } from '@/lib/window-label-formatter'
 import { formatUsagePercentageLabel } from './usage-percentage-label'
 import { useAppStore } from '@/store'
@@ -97,9 +99,11 @@ export function getUsageTone(p: ProviderRateLimits): UsageTone {
  */
 export function UsageOverflowChip({
   hidden,
+  providerCount,
   display
 }: {
   hidden: readonly ProviderRateLimits[]
+  providerCount: number
   display: UsagePercentageDisplay
 }): React.JSX.Element {
   const tones = hidden.map(getUsageTone)
@@ -130,9 +134,13 @@ export function UsageOverflowChip({
           value0: names
         }
       )}
-      className="inline-flex h-4 items-center rounded-full border border-border px-1.5 text-[11px] font-medium tabular-nums text-foreground data-[tone=urgent]:border-destructive/40 data-[tone=urgent]:text-destructive data-[tone=warning]:border-status-warning-border data-[tone=warning]:text-status-warning data-[usage-collapsed=true]:invisible data-[usage-collapsed=true]:absolute"
+      className="inline-grid h-4 items-center justify-items-center rounded-full border border-border px-1.5 text-[11px] font-medium tabular-nums text-foreground data-[tone=urgent]:border-destructive/40 data-[tone=urgent]:text-destructive data-[tone=warning]:border-status-warning-border data-[tone=warning]:text-status-warning data-[usage-collapsed=true]:invisible data-[usage-collapsed=true]:absolute"
     >
-      +{Math.max(1, hidden.length)}
+      {/* Why: count changes must not invalidate density measurements and restart probing. */}
+      <span aria-hidden="true" className="invisible col-start-1 row-start-1">
+        +{providerCount}
+      </span>
+      <span className="col-start-1 row-start-1">+{Math.max(1, hidden.length)}</span>
     </span>
   )
 }
@@ -283,6 +291,43 @@ function VerboseProviderUsage({
   )
 }
 
+// A plan spends into its overage balance only once an included window is
+// exhausted. Treat ~100% as capped to tolerate provider rounding.
+const CAP_THRESHOLD_PERCENT = 99.5
+
+// Why: only reveal the compact balance once a capped window can spend it.
+function isExtraUsageActive(p: ProviderRateLimits): boolean {
+  if (
+    !p.extraUsage ||
+    !p.extraUsage.enabled ||
+    (p.extraUsage.unit === 'currency' &&
+      (p.extraUsage.balance === null || p.extraUsage.balance <= 0))
+  ) {
+    return false
+  }
+  return [p.session, p.weekly, p.monthly, p.fableWeekly].some(
+    (w) => w != null && clampUsedPercent(w.usedPercent) >= CAP_THRESHOLD_PERCENT
+  )
+}
+
+function formatCompactExtraUsage(balance: ProviderRateLimits['extraUsage']): string {
+  if (!balance) {
+    return ''
+  }
+  if (balance.unit === 'credits') {
+    return balance.unlimited
+      ? translate('auto.components.status.bar.StatusBar.4025a6f62f', 'Unlimited')
+      : translate('auto.components.status.bar.StatusBar.a95969101f', '{{value0}} credits', {
+          value0: formatCreditCount(balance.balance)
+        })
+  }
+  return balance.balance === null
+    ? ''
+    : translate('auto.components.status.bar.StatusBar.4fba7dc1e7', '{{value0}} bal', {
+        value0: formatCurrencyAmount(balance.balance, balance.currencyCode)
+      })
+}
+
 /** Status-bar usage readout for one provider; a user template overrides the built-in text in both usage modes. */
 export function ProviderSegment({
   p,
@@ -311,7 +356,7 @@ export function ProviderSegment({
     )
   }
 
-  const tightest = getTightestUsageSection(p)
+  const tightest = mode === 'compact' ? getUsageHeadlineSection(p) : getTightestUsageSection(p)
 
   // Fetching with no prior data
   if (p.status === 'fetching' && !tightest) {
@@ -345,6 +390,7 @@ export function ProviderSegment({
 
   // Has data (ok, fetching with stale data, or error with stale data)
   const isStale = p.status === 'error'
+  const showBalance = isExtraUsageActive(p)
 
   return (
     <span className="inline-flex items-center gap-1.5">
@@ -363,6 +409,12 @@ export function ProviderSegment({
           display={display}
           showLabel={!compact}
         />
+      ) : null}
+      {showBalance && p.extraUsage ? (
+        <>
+          <span className="text-muted-foreground">·</span>
+          <span className="tabular-nums">{formatCompactExtraUsage(p.extraUsage)}</span>
+        </>
       ) : null}
       {isStale && <AlertTriangle size={11} className="text-muted-foreground/80" />}
     </span>

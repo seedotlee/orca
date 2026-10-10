@@ -56,13 +56,13 @@ function mockReducedMotion(matches: boolean): void {
 
 beforeEach(() => {
   useAppStore.setState(useAppStore.getInitialState(), true)
-  openUrl.mockReset()
-  download.mockReset()
-  check.mockReset()
+  openUrl.mockReset().mockResolvedValue(undefined)
+  download.mockReset().mockResolvedValue(undefined)
+  check.mockReset().mockResolvedValue(undefined)
   quitAndInstall.mockReset().mockResolvedValue(undefined)
   showLinuxPackage.mockReset().mockResolvedValue(undefined)
   writeClipboardText.mockReset().mockResolvedValue(undefined)
-  relaunch.mockReset()
+  relaunch.mockReset().mockResolvedValue(undefined)
   setSettings.mockReset().mockResolvedValue(undefined)
   getInstructions.mockReset().mockResolvedValue({
     ok: true,
@@ -93,6 +93,37 @@ beforeEach(() => {
 afterEach(() => {
   cleanup()
   useAppStore.setState(useAppStore.getInitialState(), true)
+})
+
+describe('UpdateCard staged install recovery', () => {
+  it.each([undefined, 'local'] as const)(
+    'retries a blocked staged install without downloading again (source %s)',
+    (source) => {
+      renderWithInitialStatus({
+        state: 'error',
+        version: '1.4.200',
+        message:
+          'Close the other Orca instances (process IDs: 12345) before installing this update.',
+        retryAction: 'install',
+        ...(source ? { source } : {})
+      })
+
+      expect(screen.getByText(/process IDs: 12345/)).toBeTruthy()
+      fireEvent.click(screen.getByRole('button', { name: 'Try Again' }))
+      expect(quitAndInstall).toHaveBeenCalledTimes(1)
+      expect(download).not.toHaveBeenCalled()
+      expect(screen.queryByRole('button', { name: 'Retry Download' })).toBeNull()
+      expect(screen.queryByRole('button', { name: 'Choose Another Build' })).toBeNull()
+    }
+  )
+
+  it('keeps the download retry for errors from older hosts without an install action', () => {
+    renderWithInitialStatus({ state: 'error', version: '1.4.200', message: 'Download failed' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry Download' }))
+    expect(download).toHaveBeenCalledTimes(1)
+    expect(quitAndInstall).not.toHaveBeenCalled()
+  })
 })
 
 describe('UpdateCard Windows signature failures', () => {
@@ -248,7 +279,7 @@ describe('UpdateCard Linux package-install recovery', () => {
 
     expect(screen.getByText('Manual Install Required')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Download Manually' }))
-    expect(openUrl).toHaveBeenCalledWith('https://github.com/stablyai/orca/releases/tag/v1.4.200')
+    expect(openUrl).toHaveBeenCalledWith('https://github.com/seedotlee/orca/releases/tag/v1.4.200')
   })
 
   it('uses the recovery version when cached update state is stale', () => {
@@ -256,7 +287,7 @@ describe('UpdateCard Linux package-install recovery', () => {
     showPackageRecovery()
 
     fireEvent.click(screen.getByRole('button', { name: 'Download Manually' }))
-    expect(openUrl).toHaveBeenCalledWith('https://github.com/stablyai/orca/releases/tag/v1.4.200')
+    expect(openUrl).toHaveBeenCalledWith('https://github.com/seedotlee/orca/releases/tag/v1.4.200')
   })
 
   it.each([
@@ -338,7 +369,7 @@ describe('UpdateCard Linux package-install recovery', () => {
     expect(screen.queryByText('Manual Install Required')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Retry Download' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Download Manually' }))
-    expect(openUrl).toHaveBeenCalledWith('https://github.com/stablyai/orca/releases/tag/v1.4.200')
+    expect(openUrl).toHaveBeenCalledWith('https://github.com/seedotlee/orca/releases/tag/v1.4.200')
   })
 
   it('keeps generic errors on the generic card when no recovery is attached', () => {

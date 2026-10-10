@@ -5,6 +5,7 @@ import type { StatusBarUsageFormat } from '../../../../shared/status-bar-usage-f
 import { normalizeUsagePercentageDisplay } from '../../../../shared/usage-percentage-display'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '../../store'
+import { SearchableSetting } from './SearchableSetting'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import {
@@ -142,5 +143,22 @@ export function StatusBarUsageFormatSetting({
         </dl>
       </div>
     </div>
+  )
+}
+
+/** Searchable row for the usage template, bound to the persisted store value. */
+export function StatusBarUsageFormatSearchableSetting(): React.JSX.Element {
+  const entry = getStatusBarUsageFormatEntry()
+  const format = useAppStore((state) => state.statusBarUsageFormat)
+  const setFormat = useAppStore((state) => state.setStatusBarUsageFormat)
+  return (
+    <SearchableSetting
+      title={entry.title}
+      description={entry.description}
+      keywords={entry.keywords}
+      className="space-y-2"
+    >
+      <StatusBarUsageFormatSetting format={format} onChange={setFormat} />
+    </SearchableSetting>
   )
 }

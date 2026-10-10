@@ -7,6 +7,7 @@ import { useWorkspaceChromeDocumentStyle } from '@/lib/use-workspace-chrome-docu
 import { resolveLeftTitlebarChromeLayout } from '@/lib/titlebar-left-chrome'
 import { shouldShowWorktreeCreationSurface } from '@/lib/worktree-creation-surface'
 import { useAppStore } from '../store'
+import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../shared/constants'
 import { selectActiveTerminalChromeState } from '../store/active-terminal-chrome-selector'
 import { useSystemPrefersDark } from '../components/terminal-pane/use-system-prefers-dark'
 import {
@@ -55,7 +56,13 @@ export function useAppChromeLayout() {
     [settings, systemPrefersDark]
   ) as React.CSSProperties | undefined
 
-  const canMountTerminalWorkbenchNow = activeWorktreeId !== null || backgroundTerminalMountRequested
+  // Why floating tabs count: the workbench owns every tab's unsaved-close and quit protection, and
+  // floating tabs exist without an active worktree.
+  const floatingWorkspaceHasTabs = useAppStore(
+    (s) => (s.unifiedTabsByWorktree[FLOATING_TERMINAL_WORKTREE_ID]?.length ?? 0) > 0
+  )
+  const canMountTerminalWorkbenchNow =
+    activeWorktreeId !== null || backgroundTerminalMountRequested || floatingWorkspaceHasTabs
   // Why a latch in state, not a ref: the write has to be visible to the next render, and a
   // render-phase ref write would also survive a render React discards. Setting state during
   // render is the supported way to derive it, and the `||` below keeps this render correct.
@@ -63,7 +70,7 @@ export function useAppChromeLayout() {
   if (canMountTerminalWorkbenchNow && !hasMountedTerminalWorkbench) {
     setHasMountedTerminalWorkbench(true)
   }
-  // Why: skip the terminal bundle on the landing path, but once mounted keep hidden panes alive through sleep/shutdown when activeWorktreeId briefly goes null.
+  // Why: skip the terminal bundle on a landing path with no tabs, but once mounted keep hidden panes alive through sleep/shutdown when activeWorktreeId briefly goes null.
   const shouldMountTerminalWorkbench = canMountTerminalWorkbenchNow || hasMountedTerminalWorkbench
   // Why: visible worktree creation owns its faux tab strip start to finish; keep the previous workspace mounted for retention without real chrome.
   const creationLayoutActive = shouldShowWorktreeCreationSurface({

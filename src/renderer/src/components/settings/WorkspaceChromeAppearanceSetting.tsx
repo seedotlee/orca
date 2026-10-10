@@ -3,6 +3,8 @@ import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import type { WorkspaceChromeAppearanceMode } from '../../../../shared/ui-chrome-types'
 import { translate } from '@/i18n/i18n'
 import { SettingsRow, SettingsSegmentedControl } from './SettingsFormControls'
+import { SearchableSetting } from './SearchableSetting'
+import { getWorkspaceChromeAppearanceEntry } from './appearance-sidebar-search'
 
 type WorkspaceChromeAppearanceSettingProps = {
   settings: GlobalSettings
@@ -53,5 +55,24 @@ export function WorkspaceChromeAppearanceSetting({
         />
       }
     />
+  )
+}
+
+/** Searchable row for the app-chrome appearance mode; forced visible with the rest of the primary settings. */
+export function WorkspaceChromeAppearanceSearchableSetting({
+  settings,
+  updateSettings,
+  forceVisible
+}: WorkspaceChromeAppearanceSettingProps & { forceVisible: boolean }): React.JSX.Element {
+  const entry = getWorkspaceChromeAppearanceEntry()
+  return (
+    <SearchableSetting
+      title={entry.title}
+      description={entry.description}
+      keywords={entry.keywords}
+      forceVisible={forceVisible}
+    >
+      <WorkspaceChromeAppearanceSetting settings={settings} updateSettings={updateSettings} />
+    </SearchableSetting>
   )
 }

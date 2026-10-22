@@ -1,4 +1,5 @@
 import type { UISlice, UISliceGet, UISliceSet } from './ui-slice-contract'
+import { workspaceHostScopeForVisibleHosts } from '../../../../../shared/workspace-view/workspace-host-visibility'
 import { createAgentsViewPreferenceActions } from './ui-slice-agents-view-preference-actions'
 import {
   DEFAULT_AGENT_ACTIVITY_DISPLAY_MODE,
@@ -18,7 +19,6 @@ import {
   normalizeStatusBarUsageMode
 } from '../../../../../shared/status-bar-usage-mode'
 import { createStatusBarUsageFormatActions } from './ui-slice-status-bar-usage-format-actions'
-import type { WorkspaceHostScope } from '../../../../../shared/ui-chrome-types'
 import {
   normalizeExecutionHostOrder,
   normalizeExecutionHostScope,
@@ -72,14 +72,10 @@ export function createUiPreferenceActions(set: UISliceSet, get: UISliceGet): Par
     visibleWorkspaceHostIds: null,
     setVisibleWorkspaceHostIds: (ids) => {
       const normalized = normalizeVisibleExecutionHostIds(ids)
-      // Why: workspaceHostScope stays the compat/default-host signal for creation flows; visibility can now be multi-select.
-      let workspaceHostScope: WorkspaceHostScope = get().workspaceHostScope
-      if (normalized === null) {
-        workspaceHostScope = 'all'
-      } else if (normalized.length === 1) {
-        workspaceHostScope = normalized[0]
-      }
-      set({ visibleWorkspaceHostIds: normalized, workspaceHostScope })
+      set({
+        visibleWorkspaceHostIds: normalized,
+        workspaceHostScope: workspaceHostScopeForVisibleHosts(normalized, get().workspaceHostScope)
+      })
     },
     workspaceHostOrder: [],
     setWorkspaceHostOrder: (ids) => {

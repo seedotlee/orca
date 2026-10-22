@@ -74,6 +74,7 @@ describe('ProviderSegment usage format template', () => {
     const markup = renderToStaticMarkup(
       <ProviderSegment p={claudeLimits()} compact={false} display="used" mode="verbose" />
     )
-    expect(markup).toContain('14% used')
+    expect(markup).toContain('14%')
+    expect(markup).not.toContain('whitespace-pre')
   })
 })

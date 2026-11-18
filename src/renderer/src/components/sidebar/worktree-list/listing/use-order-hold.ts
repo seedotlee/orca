@@ -1,11 +1,11 @@
 import { useMemo, useState, useSyncExternalStore } from 'react'
-import { ORCA_SIDEBAR_INPUTS_IS_MAIN } from '../../../../../../shared/sidebar-inputs-switch'
+import { ORCA_SIDEBAR_INPUTS_IS_MAIN } from '../../../../../../shared/sidebar-list/feed/sidebar-inputs-switch'
 import {
   withHeldProjectRecency,
   type SidebarFeedIndex
-} from '../../../../../../shared/sidebar-list/sidebar-feed-index'
-import type { SortBy } from '../../../../../../shared/sidebar-list/smart-sort'
-import type { ProjectOrderBy } from '../../../../../../shared/ui-chrome-types'
+} from '../../../../../../shared/sidebar-list/feed/sidebar-feed-index'
+import type { WorkspaceSortBy as SortBy } from '../../../../../../shared/workspace-view/workspace-row-sort'
+import type { ProjectOrderBy } from '../../../../../../shared/ui-chrome/ui-chrome-types'
 import { mergeHeldOrder } from './held-order'
 
 const LIST_SELECTOR = '[data-worktree-sidebar-container]'
@@ -74,7 +74,7 @@ const noSubscription = (): (() => void) => () => {}
 const notEngaged = (): boolean => false
 
 function useListEngaged(): boolean {
-  // Switch point: the stamp-sorted list moves on events, so it holds; today's list settles itself.
+  // Only the main-input path needs event-driven hover holds; the legacy list settles independently.
   return useSyncExternalStore(
     ORCA_SIDEBAR_INPUTS_IS_MAIN ? subscribe : noSubscription,
     ORCA_SIDEBAR_INPUTS_IS_MAIN ? isEngaged : notEngaged,
@@ -82,10 +82,7 @@ function useListEngaged(): boolean {
   )
 }
 
-/**
- * Desktop only, display only: in Recent and Smart, rows stay put under the pointer and during a
- * drag, so a click never lands on a row that just moved; the new order applies on leave or drag end.
- */
+/** Hold Recent/Smart order during hover or drag so clicks cannot target moving rows; release on leave/end. */
 export function useOrderHeldWhileEngaged(ids: string[], sortBy: SortBy): string[] {
   const engaged = useListEngaged()
   const [shown, setShown] = useState({ ids, sortBy })

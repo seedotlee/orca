@@ -1,19 +1,23 @@
+import type { GitHubImageIntake } from '@/components/github/use-github-image-uploads'
+import {
+  combinedDiffViewportAttributes,
+  combinedDiffRowAttributes
+} from '@/components/editor/combined-diff/scroll-viewport/combined-diff-viewport'
 import React from 'react'
 import type { Virtualizer } from '@tanstack/react-virtual'
 import type { editor as monacoEditor } from 'monaco-editor'
-import { DiffSectionItem } from '@/components/editor/DiffSectionItem'
-import { translate } from '@/i18n/i18n'
+import { DiffSectionItem } from '@/components/editor/diff/sections/DiffSectionItem'
+import { useTranslate } from '@/i18n/use-translate'
 import type { DecoratedDiffComment } from '@/components/diff-comments/decorated-diff-comment'
 import { CombinedDiffFileTree } from '../../editor/combined-diff/browse-files/combined-diff-file-tree'
-import type { DiffSection } from '@/components/editor/diff-section-types'
+import type { DiffSection } from '@/components/editor/diff/sections/diff-section-types'
 import type { CombinedDiffFileTreeEntry } from '../../editor/combined-diff/resolve-changes/combined-diff-section-identity'
-import type { GitHubPRFile } from '../../../../../shared/github/pull-request-types'
-import type { GitBranchChangeEntry } from '../../../../../shared/git-diff-compare-types'
-import type { DiffSectionItemProps } from '@/components/editor/diff-section-item-props'
+import type { GitHubPRFile } from '../../../../../shared/github/pull-requests/pull-request-types'
+import type { GitBranchChangeEntry } from '../../../../../shared/git/diff/git-diff-compare-types'
 import { PRFilesCombinedDiffToolbar } from './pr-files-combined-diff-toolbar'
 
-/** Toolbar plus combined diff sections for a pull request’s files inside the inspect dialog. */
 export function PRFilesCombinedDiffBody({
+  imageUploadAddress,
   files,
   repoPath,
   repoId,
@@ -32,8 +36,7 @@ export function PRFilesCombinedDiffBody({
   scrollContainerRef,
   virtualizer,
   sections,
-  monacoTheme,
-  settings,
+  isDark,
   sectionHeights,
   inlineReviewComments,
   loadSection,
@@ -48,6 +51,7 @@ export function PRFilesCombinedDiffBody({
   handleSectionSaveRef,
   getCommentableLineNumbers
 }: {
+  imageUploadAddress?: GitHubImageIntake['address']
   files: GitHubPRFile[]
   repoPath: string
   repoId: string
@@ -66,8 +70,7 @@ export function PRFilesCombinedDiffBody({
   scrollContainerRef: React.RefObject<HTMLDivElement | null>
   virtualizer: Virtualizer<HTMLDivElement, Element>
   sections: DiffSection[]
-  monacoTheme: string
-  settings: DiffSectionItemProps['settings']
+  isDark: boolean
   sectionHeights: Record<number, number>
   inlineReviewComments: DecoratedDiffComment[]
   loadSection: (index: number) => void
@@ -79,13 +82,14 @@ export function PRFilesCombinedDiffBody({
     section: DiffSection,
     args: { lineNumber: number; startLine?: number; body: string }
   ) => Promise<boolean>
-  // Why: a stable callback, not an inline arrow — this re-keys every mounted row's comment decorator.
+  // Keep this callback stable or every row’s comment decorator is re-keyed.
   getCommentableLineNumbers: (section: DiffSection) => readonly number[] | undefined
   setSectionHeights: React.Dispatch<React.SetStateAction<Record<number, number>>>
   setSections: React.Dispatch<React.SetStateAction<DiffSection[]>>
   modifiedEditorsRef: React.RefObject<Map<number, monacoEditor.IStandaloneCodeEditor>>
   handleSectionSaveRef: React.MutableRefObject<(index: number) => Promise<void>>
 }): React.JSX.Element {
+  const t = useTranslate()
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
       <PRFilesCombinedDiffToolbar
@@ -109,7 +113,11 @@ export function PRFilesCombinedDiffBody({
           onCollapsedChange={setFileTreeCollapsed}
           onNavigate={handleTreeNavigate}
         />
-        <div ref={scrollContainerRef} className="min-w-0 flex-1 overflow-auto scrollbar-editor">
+        <div
+          {...combinedDiffViewportAttributes}
+          ref={scrollContainerRef}
+          className="min-w-0 flex-1 overflow-auto scrollbar-editor"
+        >
           <div className="relative w-full" style={{ height: `${virtualizer.getTotalSize()}px` }}>
             {virtualizer.getVirtualItems().map((virtualItem) => {
               const section = sections[virtualItem.index]
@@ -119,6 +127,7 @@ export function PRFilesCombinedDiffBody({
               return (
                 <div
                   key={virtualItem.key}
+                  {...combinedDiffRowAttributes}
                   data-index={virtualItem.index}
                   ref={virtualizer.measureElement}
                   className="absolute left-0 top-0 w-full"
@@ -129,8 +138,7 @@ export function PRFilesCombinedDiffBody({
                     index={virtualItem.index}
                     isBranchMode={false}
                     sideBySide={sideBySide}
-                    monacoTheme={monacoTheme}
-                    settings={settings}
+                    isDark={isDark}
                     sectionHeight={sectionHeights[virtualItem.index]}
                     worktreeId={`github-pr:${repoId}:${prNumber}`}
                     inlineComments={inlineReviewComments}
@@ -138,17 +146,18 @@ export function PRFilesCombinedDiffBody({
                     retrySection={retrySection}
                     toggleSection={toggleSection}
                     openSection={openFilesOnGitHub}
-                    openSectionTitle={translate(
+                    openSectionTitle={t(
                       'auto.components.GitHubItemDialog.85a2b66f54',
                       'Open files on GitHub'
                     )}
                     renderHeaderTrailingContent={renderViewedCheckbox}
+                    imageUploadAddress={imageUploadAddress}
                     onAddLineComment={handleAddLineComment}
-                    addLineCommentLabel={translate(
+                    addLineCommentLabel={t(
                       'auto.components.GitHubItemDialog.bf43425540',
                       'Comment'
                     )}
-                    addLineCommentPlaceholder={translate(
+                    addLineCommentPlaceholder={t(
                       'auto.components.GitHubItemDialog.86d84a17ca',
                       'Add a review comment'
                     )}

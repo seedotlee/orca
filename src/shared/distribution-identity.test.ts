@@ -14,8 +14,7 @@ function gitGrepFiles(args: string[]): string {
   try {
     return execFileSync('git', args, { cwd: repoRoot, encoding: 'utf8' })
   } catch (error) {
-    const status = (error as { status?: number }).status
-    if (status === 1) {
+    if (typeof error === 'object' && error !== null && 'status' in error && error.status === 1) {
       return ''
     }
     throw error
@@ -33,10 +32,14 @@ describe('distribution identity', () => {
   // literal that must be kept in step by hand.
   it('matches the computer-use sidecar trust check', () => {
     const swift = readFileSync(
-      resolve(repoRoot, 'native/computer-use-macos/Sources/OrcaComputerUseMacOS/main.swift'),
+      resolve(
+        repoRoot,
+        'native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/TrustedOrcaApplication.swift'
+      ),
       'utf8'
     )
     expect(swift).toContain(`bundleId == "${APP_BUNDLE_ID}"`)
+    expect(swift).toContain(`bundleId == "${DEV_APP_BUNDLE_ID}"`)
     expect(swift).toContain(`bundleId.hasPrefix("${DEV_APP_BUNDLE_ID}.")`)
   })
 
